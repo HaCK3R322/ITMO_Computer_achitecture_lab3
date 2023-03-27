@@ -1,0 +1,366 @@
+{
+    "instructions": [
+        {
+            "opcode": "PUSH",
+            "address": 2049
+        },
+        {
+            "opcode": "DUP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2053
+        },
+        {
+            "opcode": "ADD"
+        },
+        {
+            "opcode": "READ"
+        },
+        {
+            "opcode": "GET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2049
+        },
+        {
+            "opcode": "CMP"
+        },
+        {
+            "opcode": "JZ",
+            "address": 5
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2052
+        },
+        {
+            "opcode": "ADD"
+        },
+        {
+            "opcode": "JMP",
+            "address": -13
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2053
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2050
+        },
+        {
+            "opcode": "SET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2184
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2182
+        },
+        {
+            "opcode": "SET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2050
+        },
+        {
+            "opcode": "GET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2182
+        },
+        {
+            "opcode": "GET"
+        },
+        {
+            "opcode": "ADD"
+        },
+        {
+            "opcode": "GET"
+        },
+        {
+            "opcode": "DUP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2049
+        },
+        {
+            "opcode": "CMP"
+        },
+        {
+            "opcode": "JZ",
+            "address": 5
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DUP"
+        },
+        {
+            "opcode": "PRINT"
+        },
+        {
+            "opcode": "JMP",
+            "address": 2
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2182
+        },
+        {
+            "opcode": "GET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2185
+        },
+        {
+            "opcode": "ADD"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2182
+        },
+        {
+            "opcode": "SET"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2186
+        },
+        {
+            "opcode": "CMP"
+        },
+        {
+            "opcode": "JZ",
+            "address": 4
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2049
+        },
+        {
+            "opcode": "JMP",
+            "address": 3
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2048
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2049
+        },
+        {
+            "opcode": "CMP"
+        },
+        {
+            "opcode": "JNZ",
+            "address": 3
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "JMP",
+            "address": -39
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "DROP"
+        },
+        {
+            "opcode": "HLT"
+        }
+    ],
+    "data": [
+        -1,
+        0,
+        2051,
+        0,
+        1,
+        2054,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2183,
+        0,
+        0,
+        1,
+        0
+    ]
+}
