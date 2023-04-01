@@ -238,7 +238,7 @@ class Translator:
 
                 self.instr.append(translate_to_instruction("PUSH", address=address))
 
-                print("nanana im testing gh actions")
+                print("nanana im testing gh actionsssss")
 
                 i += 1
 
