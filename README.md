@@ -138,7 +138,7 @@ Translator + Proccessor
 
 Интерфейс командной строки: `translator.py <input_file> <target_file>"`
 
-Реализовано в модуле: [translator](./translator.py)
+Реализовано в модуле: [translator.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/translator.py)
 
 Этапы трансляции (функция `translate`):
 
@@ -156,7 +156,7 @@ Translator + Proccessor
 
 ## Модель процессора
 
-Реализовано в модуле: [machine](./machine.py).
+Реализовано в модуле: [machine.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/machine.py).
 
 ![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/proccessor.jpg)
 
