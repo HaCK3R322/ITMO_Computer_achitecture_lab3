@@ -603,4 +603,4 @@ Hello world!
 |-------------------------|-------|-----------|-----------|-------------|--------|-------|---------|
 | Андросов Иван Сергеевич | hello | 1         | -         | 25          | 24     | 119   | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
 | Андросов Иван Сергеевич | cat   | 1         | -         | 65          | 846    | 3975  | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
-| Андросов Иван Сергеевич | prob1 | 34        | -         | 145         | 15     | 52480 | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
+| Андросов Иван Сергеевич | prob1 | 34        | -         | 145         | 52480  | 245784 | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
