@@ -16,7 +16,6 @@ BEGIN
 UNTIL
 
 
-variable i
 0 i !
 BEGIN
     sum @ 10 %

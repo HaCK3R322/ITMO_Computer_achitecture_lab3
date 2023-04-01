@@ -154,7 +154,8 @@ class ControlUnit:
         self.address_vent_open = False
         self.decoder = {
             "opcode": None,
-            "address": 0x000
+            "address": None,
+            "related_token": None
         }
 
         self.RAM = RAM()
@@ -167,13 +168,15 @@ class ControlUnit:
 
     def log_state(self):
         logging.debug(
-            "tick = %04d -> PC: 0x%03x | SP: 0x%03x | AC: %+06d | ALU flags: zf=%r nf=%r of=%r | RAM addr:0x%03x",
+            "tick = %04d -> PC: 0x%03x | SP: 0x%03x | AC: %+06d | ALU flags: zf=%5r nf=%5r of=%5r | RAM addr:0x%03x ||| "
+            "related token: %d",
             self._tick,
             self.pc,
             self.sp,
             self.acc,
             self.alu.zero_flag, self.alu.negative_flag, self.alu.overflow_flag,
-            self.RAM.ad)
+            self.RAM.ad,
+            self.decoder["related_token"])
         # logging.debug("STACK:")
         # logging.debug("%s", get_stack_str(self.sp))
 
@@ -295,13 +298,6 @@ class ControlUnit:
             self.RAM.set(self.alu.out)
             self.tick()
 
-        elif opcode == "SF":  # Set Flags
-            logging.debug("----- SF -----")
-            # acc + 0
-            self.alu.l_in = self.acc
-            self.alu.r_in = 0
-            self.alu.ADD()
-
         elif opcode == "CMP":  # doesn't affect on stack pointer and stack itself
             logging.debug("----- CMP -----")
             # sp -> alu -> ad
@@ -355,7 +351,7 @@ class ControlUnit:
             self.tick()
 
         elif opcode in {"ADD", "SUB", "MOD", "DIV", "MUL"}:
-            logging.debug("----- ADD/SUB/MOD -----")
+            logging.debug("----- ADD/SUB/MOD/DIV/MUL -----")
             # sp -> alu --(-1)--> ad
             self.alu.set_R_in(self.sp)
             self.alu.DEC()
@@ -372,9 +368,9 @@ class ControlUnit:
             self.RAM.latch_address(self.alu.out)
             self.tick()
 
-            # acc -------+
-            #            |----> alu --(add/sub/mod)--> acc
-            # data[ad] --+
+            # acc -------+ l_in
+            #            |----> alu --(add/sub/mod/div/mul)--> acc
+            # data[ad] --+ r_in
             self.alu.set_L_in(self.acc)
             self.alu.set_R_in(self.RAM.get())
 
@@ -563,6 +559,9 @@ class ControlUnit:
             self.RAM.latch_address(self.alu.out)
             self.tick()
             # input_buffer -> data[ad]
+            if len(self.input_buffer) < 1:
+                raise BufferError("Attempt to read from void input buffer")
+
             char = self.input_buffer.pop(0)
             self.RAM.set(char)
 
@@ -572,7 +571,6 @@ class ControlUnit:
 
 
 def simulate():
-    # TODO: заменить на буферы по заданию
     program, data = read_program("program.bin")
 
     input_buffer = []
