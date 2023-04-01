@@ -238,8 +238,6 @@ class Translator:
 
                 self.instr.append(translate_to_instruction("PUSH", address=address))
 
-                print("nanana im testing gh actionsssss")
-
                 i += 1
 
             # if token is some digit value
@@ -387,6 +385,7 @@ class Translator:
                 for loop_addedd_instr_index in range(len(self.loop_stack)):
                     self.loop_stack[loop_addedd_instr_index] += number_of_added_instructions
 
+        self.instr.append({"opcode": "HLT"})
         self.instr.append({"opcode": "HLT"})
         return self.instr, self.data
 
