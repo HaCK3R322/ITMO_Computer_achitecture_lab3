@@ -1,4 +1,4 @@
-from opcode import Opcode, write_program
+import json
 import sys
 
 
@@ -29,9 +29,6 @@ import sys
 #         переменные
 #     ]
 # }
-
-class WrongCycleSyntax(Exception):
-    pass
 
 
 def get_pseudo_code(instructions):
@@ -83,7 +80,7 @@ class Translator:
             if name == var["name"]:
                 return var
 
-        raise ValueError("no var with name " + name)
+        raise SyntaxError("No variable found with name " + name)
 
     def check_contructions(self):
         if_count = 0
@@ -97,22 +94,22 @@ class Translator:
             elif token.upper() == "THEN":
                 then_count += 1
                 if then_count > if_count:
-                    raise WrongCycleSyntax(f'Syntax error token {index}: closing THEN without opening UNTIL')
+                    raise SyntaxError(f'Syntax error token {index}: closing THEN without opening UNTIL')
 
             if token.upper() == "BEGIN":
                 begin_count += 1
             elif token.upper() == "UNTIL":
                 until_count += 1
                 if until_count > begin_count:
-                    raise WrongCycleSyntax(f'Syntax error token {index}: closing UNTIL without opening BEGIN')
+                    raise SyntaxError(f'Syntax error token {index}: closing UNTIL without opening BEGIN')
 
         if begin_count != until_count:
-            raise WrongCycleSyntax(f"Number of \"BEGIN\" and \"UNTIL\" not matched: "
+            raise SyntaxError(f"Number of \"BEGIN\" and \"UNTIL\" not matched: "
                                    f"begin_count = {begin_count}; "
                                    f"until_count = {until_count}")
 
         if then_count != if_count:
-            raise WrongCycleSyntax(f"Number of \"IF\" and \"THEN\" not matched: "
+            raise SyntaxError(f"Number of \"IF\" and \"THEN\" not matched: "
                                    f"if_count = {if_count}; "
                                    f"then_count = {then_count}")
 
@@ -139,9 +136,9 @@ class Translator:
 
         def translate_to_instruction(opcode, address=None):
             if address is None:
-                return {"opcode": opcode, "related_token": i}
+                return {"opcode": opcode, "related_token_index": i}
             else:
-                return {"opcode": opcode, "address": address, "related_token": i}
+                return {"opcode": opcode, "address": address, "related_token_index": i}
 
         while i < len(self.tokens):
             instr_len_before = len(self.instr)
@@ -393,8 +390,8 @@ class Translator:
 
 
 def main(filepath):
-    with open(filepath, "r", encoding="utf-8") as file:
-        source_code = file.read()
+    with open(filepath, "r", encoding="utf-8") as source_file:
+        source_code = source_file.read()
 
         print("SOURCE CODE:")
         print(source_code)
@@ -413,7 +410,8 @@ def main(filepath):
         print()
         print(data)
 
-        write_program("program.bin", program)
+        with open("../program.bin", "w", encoding="utf-8") as bin_file:
+            bin_file.write(json.dumps(program, indent=4))
 
 
 if __name__ == '__main__':

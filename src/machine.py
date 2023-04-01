@@ -1,6 +1,6 @@
+import json
 import sys
 import logging
-from opcode import Opcode, read_program
 
 
 def get_stack_str(stack, stack_pointer):
@@ -155,7 +155,7 @@ class ControlUnit:
         self.decoder = {
             "opcode": None,
             "address": None,
-            "related_token": None
+            "related_token_index": None
         }
 
         self.RAM = RAM()
@@ -169,14 +169,14 @@ class ControlUnit:
     def log_state(self):
         logging.debug(
             "tick = %04d -> PC: 0x%03x | SP: 0x%03x | AC: %+06d | ALU flags: zf=%5r nf=%5r of=%5r | RAM addr:0x%03x ||| "
-            "related token: %d",
+            "related token index: %d",
             self._tick,
             self.pc,
             self.sp,
             self.acc,
             self.alu.zero_flag, self.alu.negative_flag, self.alu.overflow_flag,
             self.RAM.ad,
-            self.decoder["related_token"])
+            self.decoder["related_token_index"])
         # logging.debug("STACK:")
         # logging.debug("%s", get_stack_str(self.sp))
 
@@ -570,47 +570,52 @@ class ControlUnit:
             raise HTLInterrupt("HTLInterrupt")
 
 
-def simulate():
-    program, data = read_program("program.bin")
+class Simpulation:
+    def simulate(self):
+        with open("../program.bin", encoding="utf-8") as program_file:
+            program = json.loads(program_file.read())
+            instructions, data = program["instructions"], program["data"]
+            print(instructions)
 
-    input_buffer = []
-    with open("in.txt", "r") as file:
-        string = file.read()
-        for token in string:
-            input_buffer.append(ord(token))
+            input_buffer = []
+            with open("../in.txt", "r") as input_file:
+                string = input_file.read()
+                for token in string:
+                    input_buffer.append(ord(token))
 
-        input_buffer.append(0)
+                input_buffer.append(0)
 
-    output_buffer = []
+            output_buffer = []
 
-    cu = ControlUnit(program, data, input_buffer, output_buffer)
+            cu = ControlUnit(instructions, data, input_buffer, output_buffer)
 
-    instruction_counter = 0
-    while True:
-        try:
-            decoded_instruction = cu.instruction_fetch()
-            cu.execute(decoded_instruction)
+            instruction_counter = 0
+            while True:
+                try:
+                    decoded_instruction = cu.instruction_fetch()
+                    cu.execute(decoded_instruction)
 
-            instruction_counter += 1
+                    instruction_counter += 1
 
-        except HTLInterrupt:
-            logging.info("HLT INTERRUPTION")
-            break
+                except HTLInterrupt:
+                    logging.info("HLT INTERRUPTION")
+                    break
 
-    logging.info("INSTRUCTION COUNTER: %d", instruction_counter)
+            logging.info("INSTRUCTION COUNTER: %d", instruction_counter)
 
-    print("STACK:")
-    print(get_stack_str(cu.RAM.stack, cu.sp))
+            print("STACK:")
+            print(get_stack_str(cu.RAM.stack, cu.sp))
 
-    ascii_codes = cu.output_buffer
-    characters = [chr(code) for code in ascii_codes]
-    string = ''.join(characters)
-    with open("out.txt", "w") as file:
-        file.write(string)
+            ascii_codes = cu.output_buffer
+            characters = [chr(code) for code in ascii_codes]
+            string = ''.join(characters)
+            with open("../out.txt", "w") as file:
+                file.write(string)
 
 
 def main(args):
-    simulate()
+    simulation = Simpulation()
+    simulation.simulate()
 
 
 if __name__ == '__main__':
