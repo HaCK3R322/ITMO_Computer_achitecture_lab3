@@ -14,4 +14,22 @@ BEGIN
 
     i @ 999 =
 UNTIL
-sum @
+
+
+variable i
+0 i !
+BEGIN
+    sum @ 10 %
+    sum @ 10 / sum !
+
+    i @ 1 + i !
+
+    sum @ 0 =
+UNTIL
+
+BEGIN
+    48 + .
+
+    i @ 1 - i !
+    i @ 0 =
+UNTIL

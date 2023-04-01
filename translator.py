@@ -1,6 +1,7 @@
 from opcode import Opcode, write_program
 import sys
 
+
 # выходной файл разделен на две части:
 # 1:  .start
 # 2:      PUSH 0x800
@@ -28,6 +29,9 @@ import sys
 #         переменные
 #     ]
 # }
+
+class WrongCycleSyntax(Exception):
+    pass
 
 
 def translate_to_instruction(opcode, address=None):
@@ -68,6 +72,12 @@ class Translator:
         self.if_stack = []
         self.loop_stack = []
 
+        self.scope = {"VARIABLE", "BEGIN", "UNTIL", "IF", "THEN",
+                      "+", "-", "/", "*", "%", "<", ">", "=",
+                      "@", "!",
+                      "SWAP", "SET", "DUP", "OVER", "DROP",
+                      ".", "ACCEPT"}
+
     def is_variable(self, token):
         for var in self.vars:
             if token == var["name"]:
@@ -82,7 +92,28 @@ class Translator:
 
         raise ValueError("no var with name " + name)
 
-    def translate(self):
+    def pre_chek(self):
+        begin_count = 0
+        until_count = 0
+
+        for index, token in enumerate(self.tokens):
+            if token.upper() == "BEGIN":
+                begin_count += 1
+            elif token.upper() == "UNTIL":
+                until_count += 1
+                if until_count > begin_count:
+                    raise WrongCycleSyntax(f'Syntax error token {index}: closing UNTIL without opening BEGIN')
+
+        if begin_count != until_count:
+            raise WrongCycleSyntax(f"Number of \"BEGIN\" and \"UNTIL\" not matched: "
+                                   f"begin_count = {begin_count}; "
+                                   f"until_count = {until_count}")
+
+    def translate(self, optimize=False):
+        self.pre_chek()
+
+        static_digits = []
+
         i = 0
         while i < len(self.tokens):
             instr_len_before = len(self.instr)
@@ -147,7 +178,25 @@ class Translator:
                 i += 1
 
             # variable translation logic
-            elif token == "variable":
+            elif token.upper() == "VARIABLE":
+                if i == len(self.tokens) - 1:
+                    raise SyntaxError(f"Not named variable")
+
+                name = self.tokens[i + 1]
+
+                # check if new variable name is unique
+                for var in self.vars:
+                    if name == var["name"]:
+                        raise SyntaxError(f"Variable with name \"{name}\" already exists!")
+
+                # check if name is not some predefined thing
+                if name.upper() in self.scope:
+                    raise SyntaxError(f"Invalid variable name \"{name}\"")
+
+                # check if variable name is not digit
+                if name.lstrip('-+').isdigit():
+                    raise SyntaxError(f"Variable name cannot be numeric")
+
                 self.vars.append({"name": self.tokens[i + 1], "address": self.data_start})
                 self.data.append(self.data_start + 1)
                 self.data_start += 1
@@ -166,17 +215,64 @@ class Translator:
 
                 i += 1
 
+            # if token is some digit value
             elif token.lstrip('-+').isdigit():
-                self.data.append(int(token))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_start))
-                self.data_start += 1
+                if optimize:  # if optimize == True
+                    digit_found = False
+                    for digit in static_digits:  # try to find already allocated digit with that value and push it
+                        if digit["value"] == int(token):
+                            digit_found = True
+                            self.instr.append(translate_to_instruction("PUSH", address=digit["address"]))
+
+                    if not digit_found:  # if not found then add to data and remember it
+                        self.data.append(int(token))
+                        self.instr.append(translate_to_instruction("PUSH", address=self.data_start))
+
+                        static_digits.append({"value": int(token), "address": self.data_start})
+
+                        self.data_start += 1
+                else:
+                    self.data.append(int(token))
+                    self.instr.append(translate_to_instruction("PUSH", address=self.data_start))
+                    self.data_start += 1
 
                 i += 1
 
-            elif token.upper() == "=":
+            elif token.upper() == "=":  # a b =   ===>   a == b ? -1 : 0
                 self.instr.append(translate_to_instruction("CMP"))
 
                 self.instr.append(translate_to_instruction("JZ", address=4))
+                # pushing 0 (false)
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
+                self.instr.append(translate_to_instruction("JMP", address=3))
+                # pushing -1 (true)
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("PUSH", address=self.data_TRUE))
+
+                i += 1
+
+            elif token.upper() == "<":  # a b <   ===>   a < b ? -1 : 0
+                self.instr.append(translate_to_instruction("CMP"))
+
+                self.instr.append(translate_to_instruction("JL", address=4))
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("PUSH", address=self.data_TRUE))
+                self.instr.append(translate_to_instruction("JMP", address=3))
+
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("DROP"))
+                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
+
+                i += 1
+
+            elif token.upper() == ">":  # a b >   ===>   a > b ? -1 : 0
+                self.instr.append(translate_to_instruction("CMP"))
+
+                self.instr.append(translate_to_instruction("JL", address=4))
                 self.instr.append(translate_to_instruction("DROP"))
                 self.instr.append(translate_to_instruction("DROP"))
                 self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
@@ -189,7 +285,7 @@ class Translator:
                 i += 1
 
             # direct instructions translation
-            elif token.upper() in {"+", "-", "%", "!", "@", ".", "SWAP", "SET", "DUP", "OVER", "DROP"}:
+            elif token.upper() in {"+", "-", "%", "*", "/", "!", "@", ".", "SWAP", "SET", "DUP", "OVER", "DROP"}:
                 opcode = None
                 token = token.upper()
                 if token == "+":
@@ -198,6 +294,10 @@ class Translator:
                     opcode = "SUB"
                 elif token == "%":
                     opcode = "MOD"
+                elif token == "*":
+                    opcode = "MUL"
+                elif token == "/":
+                    opcode = "DIV"
                 elif token == "!":
                     opcode = "SET"
                 elif token == "@":
@@ -247,10 +347,8 @@ class Translator:
 
                 i += 1
 
-
-
             else:
-                raise NameError(f'Unrecognizible token #{i - 1}: \"{token}\"')
+                raise SyntaxError(f'Unrecognizible token #{i - 1}: \"{token}\"')
 
             number_of_added_instructions = len(self.instr) - instr_len_before
 
@@ -275,7 +373,7 @@ def main(filepath):
 
         print("\n===== translation start =====")
         translator = Translator(source_code)
-        instructions, data = translator.translate()
+        instructions, data = translator.translate(optimize=True)
         print("===== translation end =====\n")
 
         program = {"instructions": instructions, "data": data}

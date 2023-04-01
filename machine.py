@@ -91,6 +91,31 @@ class ALU:
         self.negative_flag = self.out < 0
         self.zero_flag = self.out == 0
 
+    def MUL(self):
+        if self.l_in * self.r_in > 0x7FFFFFFF:  # max value is 2147483647
+            self.out = -((self.r_in + 1) - (0x7FFFFFFF - self.l_in))
+            self.overflow_flag = True
+            logging.warning("ALU MUL OPERATION: POSITIVE OVERFLOW")
+        elif self.l_in * self.r_in < -0x80000000:  # min value is -2147483648
+            self.out = -((self.r_in + 1) - (-0x80000000 - self.l_in))
+            self.overflow_flag = True
+            logging.warning("ALU MUL OPERATION: NEGATIVE OVERFLOW")
+        else:
+            self.out = self.l_in * self.r_in
+            self.overflow_flag = False
+
+        self.negative_flag = self.out < 0
+        self.zero_flag = self.out == 0
+
+    def DIV(self):
+        if self.r_in == 0:
+            raise ZeroDivisionError
+
+        self.out = int(self.l_in / self.r_in)
+
+        self.negative_flag = self.out < 0
+        self.zero_flag = self.out == 0
+
     def SUB(self):
         self.r_in = -self.r_in
         self.ADD()
@@ -322,7 +347,14 @@ class ControlUnit:
                 self.address_vent_open = True
             self.tick()
 
-        elif opcode in {"ADD", "SUB", "MOD"}:
+        elif opcode == "JL":
+            logging.debug("----- JL -----")
+            # decoder_address -> alu -> pc
+            if self.alu.negative_flag is True:
+                self.address_vent_open = True
+            self.tick()
+
+        elif opcode in {"ADD", "SUB", "MOD", "DIV", "MUL"}:
             logging.debug("----- ADD/SUB/MOD -----")
             # sp -> alu --(-1)--> ad
             self.alu.set_R_in(self.sp)
@@ -352,6 +384,10 @@ class ControlUnit:
                 self.alu.SUB()
             elif opcode == "MOD":
                 self.alu.MOD()
+            elif opcode == "MUL":
+                self.alu.MUL()
+            elif opcode == "DIV":
+                self.alu.DIV()
 
             self.acc = self.alu.out
             self.tick()
@@ -571,7 +607,7 @@ def simulate():
     ascii_codes = cu.output_buffer
     characters = [chr(code) for code in ascii_codes]
     string = ''.join(characters)
-    with open("out.txt", "w", encoding="utf-8") as file:
+    with open("out.txt", "w") as file:
         file.write(string)
 
 
