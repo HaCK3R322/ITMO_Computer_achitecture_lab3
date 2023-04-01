@@ -386,7 +386,6 @@ class Translator:
                     self.loop_stack[loop_addedd_instr_index] += number_of_added_instructions
 
         self.instr.append({"opcode": "HLT"})
-        self.instr.append({"opcode": "HLT"})
         return self.instr, self.data
 
 
