@@ -158,6 +158,8 @@ Translator + Proccessor
 
 Реализовано в модуле: [machine](./machine.py).
 
+![scheme](./sheme.jpg)
+
 ### DataPath
 
 ``` text
