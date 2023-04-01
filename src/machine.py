@@ -571,51 +571,55 @@ class ControlUnit:
 
 
 class Simpulation:
+    def __init__(self, program, input_buffer, output_buffer):
+        self.instructions = program["instructions"]
+        self.data = program["data"]
+
+        self.input_buffer = input_buffer
+        self.output_buffer = output_buffer
+
     def simulate(self):
-        with open("../program.bin", encoding="utf-8") as program_file:
-            program = json.loads(program_file.read())
-            instructions, data = program["instructions"], program["data"]
-            print(instructions)
+        cu = ControlUnit(self.instructions, self.data, self.input_buffer, self.output_buffer)
 
-            input_buffer = []
-            with open("../in.txt", "r") as input_file:
-                string = input_file.read()
-                for token in string:
-                    input_buffer.append(ord(token))
+        instruction_counter = 0
+        while True:
+            try:
+                decoded_instruction = cu.instruction_fetch()
+                cu.execute(decoded_instruction)
 
-                input_buffer.append(0)
+                instruction_counter += 1
 
-            output_buffer = []
-
-            cu = ControlUnit(instructions, data, input_buffer, output_buffer)
-
-            instruction_counter = 0
-            while True:
-                try:
-                    decoded_instruction = cu.instruction_fetch()
-                    cu.execute(decoded_instruction)
-
-                    instruction_counter += 1
-
-                except HTLInterrupt:
-                    logging.info("HLT INTERRUPTION")
-                    break
-
-            logging.info("INSTRUCTION COUNTER: %d", instruction_counter)
-
-            print("STACK:")
-            print(get_stack_str(cu.RAM.stack, cu.sp))
-
-            ascii_codes = cu.output_buffer
-            characters = [chr(code) for code in ascii_codes]
-            string = ''.join(characters)
-            with open("../out.txt", "w") as file:
-                file.write(string)
+            except HTLInterrupt:
+                logging.info("HLT INTERRUPTION")
+                break
+        logging.info("INSTRUCTION COUNTER: %d", instruction_counter)
 
 
 def main(args):
-    simulation = Simpulation()
-    simulation.simulate()
+    program_file_path = args[0]
+    input_file_path = args[1]
+    output_file_path = args[2]
+
+    with open(program_file_path, encoding="utf-8") as program_file:
+        program = json.loads(program_file.read())
+
+        input_buffer = []
+        with open(input_file_path, "r") as input_file:
+            string = input_file.read()
+            for token in string:
+                input_buffer.append(ord(token))
+
+            input_buffer.append(0)
+
+            output_buffer = []
+
+            simulation = Simpulation(program, input_buffer, output_buffer)
+            simulation.simulate()
+
+            characters = [chr(code) for code in output_buffer]
+            string = ''.join(characters)
+            with open(output_file_path, "w") as file:
+                file.write(string)
 
 
 if __name__ == '__main__':

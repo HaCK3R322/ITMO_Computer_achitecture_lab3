@@ -410,7 +410,7 @@ def main(filepath):
         print()
         print(data)
 
-        with open("../program.bin", "w", encoding="utf-8") as bin_file:
+        with open("program.bin", "w", encoding="utf-8") as bin_file:
             bin_file.write(json.dumps(program, indent=4))
 
 
