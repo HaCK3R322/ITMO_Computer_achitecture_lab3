@@ -158,7 +158,7 @@ Translator + Proccessor
 
 Реализовано в модуле: [machine](./machine.py).
 
-![scheme](./sheme.jpg)
+![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/scheme.jpg)
 
 ### DataPath
 
