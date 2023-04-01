@@ -158,282 +158,449 @@ Translator + Proccessor
 
 Реализовано в модуле: [machine](./machine.py).
 
-![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/scheme.jpg)
+![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/proccessor.jpg)
 
-### DataPath
+Память данных (RAM)
+- реализована в классе RAM
+- `latch_address` -- защёлкивание адреса. Может быть защёлкнут либо с выхода `ALU`, либо с адресного регистра `декодера`
+- вывод может осуществляться либо на правый вход `ALU`, либо на порт вывода
+- ввод может осуществляться либо с выхода `ALU`, либо с порта ввода
+- управление сигналами для выбора направлений ввода/вывода реализованы в рамках python
 
-``` text
+Память инструкций
+- представленна в виде списка структур. Доступ к её ячейкам осуществляется только в рамках цикла выборки инструкции по счетчику команд (значение счетчика команд используется как индекс в списке).
+- вывод идёт на декодер, который просто разбивает структуру на код команды и, если нужно, адрес, содержащийся в инструкции.
+- перед выбором инструкции (в зависимости от состояния вентиля и флагов аккумулятора) счетчик команд может быть сложен с адресом декодированной инструкции
+- в конце каждой выборки инструкции идёт инкрементация счетчика команд.
 
-       +--------------+  addr    +--------+
------> |      ad      |--------->|  data  |
-       +--------------+          | memory |
-                                 |        |
-                                 |        |                     |
-                                 |        |    data_out         |
-                                 |        |---------------------+-------> data_out 
-                                 |        |
-                                 |        |
-                                 +--------+
+ALU
+- реализована в классе ALU
+- в зависимости от сигналов управляющего юнита выполняет различные операции с правым и/или левым входом (в том числе простое перенаправление)
+- установка сигналов реализована в рамках python
+- выбором подающихся значений на правый и левый входы, а также направлением вывода занимается управляющий юнит
 
+CU (control unit, управляющий юнит)
+- реализован в классе ControlUnit
+- занимается установкой управляющих сигналов (т.с. выполнением команд), реализовано в рамках python
 
+Симуляция
+- происходит в классе Simulation в методе simulate
+- состоит из чередующихся между собой выборки инструкции и её выполнения
+- заканчивается либо при возникновении критической ошибки (попытка прочитать пустой входной буфер/обращение к памяти по недопустимому адресу/деление на 0), либо выполнением команды `HTL`
 
-
-
-
-
-
-
-
-
-                            latch
-                              |
-                              v
-                     +--------------+  addr   +--------+
-               +---->| data_address |---+---->|  data  |
-               |     +--------------+   |     | memory |
-           +-------+                    |     |        |
-    sel -->|  MUX  |         +----------+     |        |
-           +-------+         |                |        |
-            ^     ^          |                |        |
-            |     |          |        data_in |        | data_out
-            |     +---(+1)---+          +---->|        |-----+
-            |                |          |     |        |     |
-            +---------(-1)---+          |  oe |        |     |
-                                        | --->|        |     |
-                                        |     |        |     |
-                                        |  wr |        |     |
-                                        | --->|        |     |
-                                        |     +--------+     |
-                                        |                    v
-                                    +--------+     latch  +-----+
-                          sel ----> |  MUX   |    ------->| acc |
-                                    +--------+            +-----+
-                                     ^   ^  ^                |
-                                     |   |  |                +---(==0)---> zero
-                                     |   |  |                |
-                                     |   |  +---(+1)---------+
-                                     |   |                   |
-                                     |   +------(-1)---------+
-                                     |                       |
-            input -------------------+                       +---------> output
-```
-
-Реализован в классе `DataPath`.
-
-- `data_memory` -- однопортовая, поэтому либо читаем, либо пишем.
-- `input` -- вызовет остановку процесса моделирования, если буфер входных значений закончился.
-
-Сигналы (обрабатываются за один такт, реализованы в виде методов класса):
-
-- `latch_data_addr` -- защёлкнуть выбранное значение в `data_addr`;
-- `latch_acc` -- защёлкнуть в аккумулятор выход памяти данных;
-- `output` -- записать аккумулятор в порт вывода (обработка на python);
-- `wr` -- записать выбранное значение в память:
-    - инкрементированное;
-    - декрементированное;
-    - с порта ввода (обработка на python).
-
-Флаги:
-
-- `zero` -- отражает наличие нулевого значения в аккумуляторе.
-
-### RAM
-
-``` text
-   +------------------(+1)-------+
-   |                             |
-   |   +-----+                   |
-   +-->|     |     +---------+   |    +---------+
-       | MUX |---->| program |---+--->| program |
-   +-->|     |     | counter |        | memory  |
-   |   +-----+     +---------+        +---------+
-   |      ^                               |
-   |      | sel_next                      | current instruction
-   |      |                               |
-   +---------------(select-arg)-----------+
-          |                               |      +---------+
-          |                               |      |  step   |
-          |                               |  +---| counter |
-          |                               |  |   +---------+
-          |                               v  v        ^
-          |                       +-------------+     |
-          +-----------------------| instruction |-----+
-                      +---------->| decoder     |
-                      |           +-------------+
-                      |                   |
-                      |                   | signals
-                      |                   v
-                      |    zero     +----------+
-                      +-------------|          |
-                                    | DataPath |
-                     input -------->|          |----------> output
-                                    +----------+
-```
-
-Реализован в классе `ControlUnit`.
-
-- Hardwired (реализовано полностью на python).
-- Моделирование на уровне инструкций.
-- Трансляция инструкции в последовательность (0-2 такта) сигналов: `decode_and_execute_instruction`.
-- `step_counter` необходим для многотактовых команд:
-    - в классе `ControlUnit` отсутствует, т.к. моделирование производится на уровне инструкций.
-
-Сигнал:
-
-- `latch_program_counter` -- сигнал для обновления счётчика команд в ControlUnit.
-
-Особенности работы модели:
-
-- Для журнала состояний процессора используется стандартный модуль logging.
-- Количество инструкций для моделирования ограничено hardcoded константой.
-- Остановка моделирования осуществляется при помощи исключений:
-    - `EOFError` -- если нет данных для чтения из порта ввода-вывода;
-    - `StopIteration` -- если выполнена инструкция `halt`.
-- Управление симуляцией реализовано в функции `simulate`.
 
 ## Апробация
 
-В качестве тестов использовано два алгоритма:
+В качестве тестов использовано три алгоритма:
 
-1. [hello world](examples/hello.bf).
-2. [cat](examples/cat.bf) -- программа `cat`, повторяем ввод на выводе.
+1. [hello world](hello_world.forth) -- вывод 'Hello world!'
+2. [prob1](prob1.forth) -- подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
+3. [cat](cat.forth) -- программа `cat`, повторяем ввод на выводе.
 
-Интеграционные тесты реализованы тут: [integration_test](./integration_test.py) в двух вариантах:
+Интеграционные тесты реализованы тут: [test](./test) в двух вариантах:
 
-- через golden tests, конфигурация которых лежит в папке [golden](./golden) (рекомендуемый способ).
-- через unittest (устаревший пример).
+- через golden tests ПОКА НЕ ДОДЕЛАНО
+- через unittest
 
 CI:
 
 ``` yaml
-lab3-example:
-  stage: test
-  image:
-    name: python-tools
-    entrypoint: [""]
-  script:
-    - cd src/brainfuck
-    - python3-coverage run -m pytest --verbose
-    - find . -type f -name "*.py" | xargs -t python3-coverage report
-    - find . -type f -name "*.py" | xargs -t pep8 --ignore=E501
-    - find . -type f -name "*.py" | xargs -t pylint
+name: CI
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: test translator
+      run: |
+        python -m unittest -v -b test/TestTranslator.py 
+
+    - name: test simulation
+      run: |
+        python -m unittest -v -b test/TestSimulation.py 
 ```
 
-где:
-
-- `python3-coverage` -- формирование отчёта об уровне покрытия исходного кода.
-- `pytest` -- утилита для запуска тестов.
-- `pep8` -- утилита для проверки форматирования кода. `E501` (длина строк) отключено, но не следует этим злоупотреблять.
-- `pylint` -- утилита для проверки качества кода. Некоторые правила отключены в отдельных модулях с целью упрощения кода.
-- Docker image `python-tools` включает в себя все перечисленные утилиты. Его конфигурация: [Dockerfile](./Dockerfile).
-
-Пример использования и журнал работы процессора на примере `cat`:
+Пример использования и журнал работы процессора на примере `hello world`:
 
 ``` console
-> cd src/brainfuck
-> cat examples/foo_input.txt
-foo
-> cat examples/cat.bf 
-,[.,]
-> ./translator.py examples/cat.bf target.out
-source LoC: 1 code instr: 6
-> cat target.out 
-[
-    {
-        "opcode": "input",
-        "term": [
-            1,
-            1,
-            ","
-        ]
-    },
-    {
-        "opcode": "jz",
-        "arg": 5,
-        "term": [
-            1,
-            2,
-            "["
-        ]
-    },
-    {
-        "opcode": "print",
-        "term": [
-            1,
-            3,
-            "."
-        ]
-    },
-    {
-        "opcode": "input",
-        "term": [
-            1,
-            4,
-            ","
-        ]
-    },
-    {
-        "opcode": "jmp",
-        "arg": 1,
-        "term": [
-            1,
-            5,
-            "]"
-        ]
-    },
-    {
-        "opcode": "halt"
-    }
-]
-> ./machine.py target.out examples/foo_input.txt
-DEBUG:root:{TICK: 0, PC: 0, ADDR: 0, OUT: 0, ACC: 0} input  (',' @ 1:1)
-DEBUG:root:input: 'f'
-DEBUG:root:{TICK: 2, PC: 1, ADDR: 0, OUT: 102, ACC: 0} jz 5 ('[' @ 1:2)
-DEBUG:root:{TICK: 4, PC: 2, ADDR: 0, OUT: 102, ACC: 102} print  ('.' @ 1:3)
-DEBUG:root:output: '' << 'f'
-DEBUG:root:{TICK: 6, PC: 3, ADDR: 0, OUT: 102, ACC: 102} input  (',' @ 1:4)
-DEBUG:root:input: 'o'
-DEBUG:root:{TICK: 8, PC: 4, ADDR: 0, OUT: 111, ACC: 102} jmp 1 (']' @ 1:5)
-DEBUG:root:{TICK: 9, PC: 1, ADDR: 0, OUT: 111, ACC: 102} jz 5 ('[' @ 1:2)
-DEBUG:root:{TICK: 11, PC: 2, ADDR: 0, OUT: 111, ACC: 111} print  ('.' @ 1:3)
-DEBUG:root:output: 'f' << 'o'
-DEBUG:root:{TICK: 13, PC: 3, ADDR: 0, OUT: 111, ACC: 111} input  (',' @ 1:4)
-DEBUG:root:input: 'o'
-DEBUG:root:{TICK: 15, PC: 4, ADDR: 0, OUT: 111, ACC: 111} jmp 1 (']' @ 1:5)
-DEBUG:root:{TICK: 16, PC: 1, ADDR: 0, OUT: 111, ACC: 111} jz 5 ('[' @ 1:2)
-DEBUG:root:{TICK: 18, PC: 2, ADDR: 0, OUT: 111, ACC: 111} print  ('.' @ 1:3)
-DEBUG:root:output: 'fo' << 'o'
-DEBUG:root:{TICK: 20, PC: 3, ADDR: 0, OUT: 111, ACC: 111} input  (',' @ 1:4)
-DEBUG:root:input: '\n'
-DEBUG:root:{TICK: 22, PC: 4, ADDR: 0, OUT: 10, ACC: 111} jmp 1 (']' @ 1:5)
-DEBUG:root:{TICK: 23, PC: 1, ADDR: 0, OUT: 10, ACC: 111} jz 5 ('[' @ 1:2)
-DEBUG:root:{TICK: 25, PC: 2, ADDR: 0, OUT: 10, ACC: 10} print  ('.' @ 1:3)
-DEBUG:root:output: 'foo' << '\n'
-DEBUG:root:{TICK: 27, PC: 3, ADDR: 0, OUT: 10, ACC: 10} input  (',' @ 1:4)
-WARNING:root:Input buffer is empty!
-INFO:root:output_buffer: 'foo\n'
-foo
+> cat hello_world.forth
+72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+> python src/translator.py hello_world.forth
+SOURCE CODE:
+72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
 
-instr_counter:  15 ticks: 28
+===== translation start =====
+TRANSLATION (0): token: 72
+TRANSLATION (1): token: .
+TRANSLATION (2): token: 101
+TRANSLATION (3): token: .
+TRANSLATION (4): token: 108
+TRANSLATION (5): token: .
+TRANSLATION (6): token: 108
+TRANSLATION (7): token: .
+TRANSLATION (8): token: 111
+TRANSLATION (9): token: .
+TRANSLATION (10): token: 32
+TRANSLATION (11): token: .
+TRANSLATION (12): token: 119
+TRANSLATION (13): token: .
+TRANSLATION (14): token: 111
+TRANSLATION (15): token: .
+TRANSLATION (16): token: 114
+TRANSLATION (17): token: .
+TRANSLATION (18): token: 108
+TRANSLATION (19): token: .
+TRANSLATION (20): token: 100
+TRANSLATION (21): token: .
+TRANSLATION (22): token: 33
+TRANSLATION (23): token: .
+===== translation end =====
+
+
+Translated code:
+{'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index'
+: 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opco
+de': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH
+', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'addr
+ess': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 20
+57, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 
+101, 108, 111, 32, 119, 114, 100, 33]}
+
+PUSH 0x802
+PRINT
+PUSH 0x803
+PRINT
+PUSH 0x808
+PRINT
+PUSH 0x804
+PRINT
+PUSH 0x809
+PRINT
+PUSH 0x80a
+PRINT
+HLT
+
+
+[-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]
+> cat program.bin 
+{                                   
+    "instructions": [               
+        {                           
+            "opcode": "PUSH",       
+            "address": 2050,        
+            "related_token_index": 0
+        },                          
+        {                           
+            "opcode": "PRINT",      
+            "related_token_index": 1
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2051,
+            "related_token_index": 2
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 3
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2052,
+            "related_token_index": 4
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 5
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2052,
+            "related_token_index": 6
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 7
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2053,
+            "related_token_index": 8
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 9
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2054,
+            "related_token_index": 10
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 11
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2055,
+            "related_token_index": 12
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 13
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2053,
+            "related_token_index": 14
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 15
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2056,
+            "related_token_index": 16
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 17
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2052,
+            "related_token_index": 18
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 19
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2057,
+            "related_token_index": 20
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 21
+        },
+        {
+            "opcode": "PUSH",
+            "address": 2058,
+            "related_token_index": 22
+        },
+        {
+            "opcode": "PRINT",
+            "related_token_index": 23
+        },
+        {
+            "opcode": "HLT"
+        }
+    ],
+    "data": [
+        -1,
+        0,
+        72,
+        101,
+        108,
+        111,
+        32,
+        119,
+        114,
+        100,
+        33
+    ]
+}
+
+> ./machine.py target.out examples/foo_input.txt
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0001 -> PC: 0x001 | SP: 0x000 | AC: +00000 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 0
+DEBUG:root:tick = 0002 -> PC: 0x001 | SP: 0x000 | AC: +00000 | ALU flags: zf=False nf=False of=False | RAM addr:0x802 ||| related token index: 0
+DEBUG:root:tick = 0003 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf=False nf=False of=False | RAM addr:0x802 ||| related token index: 0
+DEBUG:root:tick = 0004 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 0
+DEBUG:root:tick = 0005 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 0
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0007 -> PC: 0x002 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
+DEBUG:root:tick = 0008 -> PC: 0x002 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
+DEBUG:root:tick = 0009 -> PC: 0x002 | SP: 0x-01 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0011 -> PC: 0x003 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 2
+DEBUG:root:tick = 0012 -> PC: 0x003 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x803 ||| related token index: 2
+DEBUG:root:tick = 0013 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf=False nf=False of=False | RAM addr:0x803 ||| related token index: 2
+DEBUG:root:tick = 0014 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 2
+DEBUG:root:tick = 0015 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 2
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0017 -> PC: 0x004 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
+DEBUG:root:tick = 0018 -> PC: 0x004 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
+DEBUG:root:tick = 0019 -> PC: 0x004 | SP: 0x-01 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0021 -> PC: 0x005 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 4
+DEBUG:root:tick = 0022 -> PC: 0x005 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 4
+DEBUG:root:tick = 0023 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 4
+DEBUG:root:tick = 0024 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 4
+DEBUG:root:tick = 0025 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 4
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0027 -> PC: 0x006 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
+DEBUG:root:tick = 0028 -> PC: 0x006 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
+DEBUG:root:tick = 0029 -> PC: 0x006 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0031 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 6
+DEBUG:root:tick = 0032 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 6
+DEBUG:root:tick = 0033 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 6
+DEBUG:root:tick = 0034 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 6
+DEBUG:root:tick = 0035 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 6
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0037 -> PC: 0x008 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
+DEBUG:root:tick = 0038 -> PC: 0x008 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
+DEBUG:root:tick = 0039 -> PC: 0x008 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0041 -> PC: 0x009 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 8
+DEBUG:root:tick = 0042 -> PC: 0x009 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x805 ||| related token index: 8
+DEBUG:root:tick = 0043 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x805 ||| related token index: 8
+DEBUG:root:tick = 0044 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 8
+DEBUG:root:tick = 0045 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 8
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0047 -> PC: 0x00a | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
+DEBUG:root:tick = 0048 -> PC: 0x00a | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
+DEBUG:root:tick = 0049 -> PC: 0x00a | SP: 0x-01 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0051 -> PC: 0x00b | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 10
+DEBUG:root:tick = 0052 -> PC: 0x00b | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x806 ||| related token index: 10
+DEBUG:root:tick = 0053 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf=False nf=False of=False | RAM addr:0x806 ||| related token index: 10
+DEBUG:root:tick = 0054 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 10
+DEBUG:root:tick = 0055 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 10
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0057 -> PC: 0x00c | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
+DEBUG:root:tick = 0058 -> PC: 0x00c | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
+DEBUG:root:tick = 0059 -> PC: 0x00c | SP: 0x-01 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0061 -> PC: 0x00d | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 12
+DEBUG:root:tick = 0062 -> PC: 0x00d | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x807 ||| related token index: 12
+DEBUG:root:tick = 0063 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf=False nf=False of=False | RAM addr:0x807 ||| related token index: 12
+DEBUG:root:tick = 0064 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 12
+DEBUG:root:tick = 0065 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 12
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0067 -> PC: 0x00e | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
+DEBUG:root:tick = 0068 -> PC: 0x00e | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
+DEBUG:root:tick = 0069 -> PC: 0x00e | SP: 0x-01 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0071 -> PC: 0x00f | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 14
+DEBUG:root:tick = 0072 -> PC: 0x00f | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x805 ||| related token index: 14
+DEBUG:root:tick = 0073 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x805 ||| related token index: 14
+DEBUG:root:tick = 0074 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 14
+DEBUG:root:tick = 0075 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 14
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0077 -> PC: 0x010 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
+DEBUG:root:tick = 0078 -> PC: 0x010 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
+DEBUG:root:tick = 0079 -> PC: 0x010 | SP: 0x-01 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0081 -> PC: 0x011 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 16
+DEBUG:root:tick = 0082 -> PC: 0x011 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x808 ||| related token index: 16
+DEBUG:root:tick = 0083 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf=False nf=False of=False | RAM addr:0x808 ||| related token index: 16
+DEBUG:root:tick = 0084 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 16
+DEBUG:root:tick = 0085 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 16
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0087 -> PC: 0x012 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
+DEBUG:root:tick = 0088 -> PC: 0x012 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
+DEBUG:root:tick = 0089 -> PC: 0x012 | SP: 0x-01 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0091 -> PC: 0x013 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 18
+DEBUG:root:tick = 0092 -> PC: 0x013 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 18
+DEBUG:root:tick = 0093 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 18
+DEBUG:root:tick = 0094 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 18
+DEBUG:root:tick = 0095 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 18
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0097 -> PC: 0x014 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
+DEBUG:root:tick = 0098 -> PC: 0x014 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
+DEBUG:root:tick = 0099 -> PC: 0x014 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0101 -> PC: 0x015 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 20
+DEBUG:root:tick = 0102 -> PC: 0x015 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x809 ||| related token index: 20
+DEBUG:root:tick = 0103 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf=False nf=False of=False | RAM addr:0x809 ||| related token index: 20
+DEBUG:root:tick = 0104 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 20
+DEBUG:root:tick = 0105 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 20
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0107 -> PC: 0x016 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
+DEBUG:root:tick = 0108 -> PC: 0x016 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
+DEBUG:root:tick = 0109 -> PC: 0x016 | SP: 0x-01 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PUSH
+INFO:root:----- PUSH -----
+DEBUG:root:tick = 0111 -> PC: 0x017 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 22
+DEBUG:root:tick = 0112 -> PC: 0x017 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x80a ||| related token index: 22
+DEBUG:root:tick = 0113 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf=False nf=False of=False | RAM addr:0x80a ||| related token index: 22
+DEBUG:root:tick = 0114 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 22
+DEBUG:root:tick = 0115 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 22
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: PRINT
+DEBUG:root:----- PRINT -----
+DEBUG:root:tick = 0117 -> PC: 0x018 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
+DEBUG:root:tick = 0118 -> PC: 0x018 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
+DEBUG:root:tick = 0119 -> PC: 0x018 | SP: 0x-01 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
+INFO:root:=====   instruction fetch   =====
+DEBUG:root:decoded instruction opcode: HLT
+DEBUG:root:----- HLT -----
+INFO:root:HLT INTERRUPTION
+INFO:root:INSTRUCTION COUNTER: 24
+
+> cat out.txt
+Hello world!
 ```
 
-| ФИО           | алг.  | LoC       | code байт | code инстр. | инстр. | такт. | вариант |
-|---------------|-------|-----------|-----------|-------------|--------|-------|---------|
-| Преподавателя | hello | ...       | -         | ...         | ...    | ...   | ...     |
-| Преподавателя | cat   | 1         | -         | 6           | 15     | 28    | ...     |
-
-
-<program> ::= <statement>*
-<statement> ::= <variable-declaration> | <conditional-statement> | <loop-statement> | <arithmetic-operation> | <stack-operation> | <io-operation> | <number>
-<variable-declaration> ::= "VARIABLE" <identifier>
-<conditional-statement> ::= "IF" <statement>* "THEN"
-<loop-statement> ::= "BEGIN" <statement>* "UNTIL"
-<arithmetic-operation> ::= "+" | "-" | "/" | "*" | "%" | "<" | ">" | "="
-<stack-operation> ::= "@" | "!" | "SWAP" | "SET" | "DUP" | "OVER" | "DROP"
-<io-operation> ::= "." | "ACCEPT"
-<identifier> ::= <letter> <letter-or-digit>*
-<number> ::= <digit>+
-
-<letter> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
-<digit> ::= "0" | "1" | ... | "9"
-<letter-or-digit> ::= <letter> | <digit>
+| ФИО                     | алг.  | LoC       | code байт | code инстр. | инстр. | такт. | вариант |
+|-------------------------|-------|-----------|-----------|-------------|--------|-------|---------|
+| Андросов Иван Сергеевич | hello | 1         | -         | 25          | 24     | 119   | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
+| Андросов Иван Сергеевич | cat   | 1         | -         | 65          | 846    | 3975  | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
+| Андросов Иван Сергеевич | prob1 | 34        | -         | 145         | 15     | 52480 | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
