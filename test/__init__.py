@@ -1,3 +1,3 @@
 __all__ = ['TestTranslator']
 
-from .TestTranslator import TestTranslator
+from test.unittests.TestTranslator import TestTranslator

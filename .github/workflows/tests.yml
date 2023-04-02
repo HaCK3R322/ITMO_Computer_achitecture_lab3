@@ -14,8 +14,8 @@ jobs:
         
     - name: test translator
       run: |
-        python -m unittest -v -b test/TestTranslator.py 
+        python -m unittest -v -b test/unittests/TestTranslator.py 
 
     - name: test simulation
       run: |
-        python -m unittest -v -b test/TestSimulation.py 
+        python -m unittest -v -b test/unittests/TestSimulation.py 
