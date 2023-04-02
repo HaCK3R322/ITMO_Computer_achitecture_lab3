@@ -27,4 +27,4 @@ jobs:
 
     - name: test golden tests
       run: |
-        pytest --markers=golden_test
+        pytest 
