@@ -17,13 +17,13 @@ class TestAll(unittest.TestCase):
 
     def test_cat(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            shutil.copy('test/integrational/examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
             target_file_path = os.path.join(tmpdir, 'target.out')
             output_file_path = os.path.join(tmpdir, 'out.txt')
 
-            translator.main('examples/cat.forth',
+            translator.main('test/integrational/examples/cat.forth',
                             target_file_path)
             machine.main(target_file_path, input_file_path, output_file_path)
 
@@ -32,13 +32,13 @@ class TestAll(unittest.TestCase):
 
     def test_hello_world(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            shutil.copy('test/integrational/examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
             target_file_path = os.path.join(tmpdir, 'target.out')
             output_file_path = os.path.join(tmpdir, 'out.txt')
 
-            translator.main('examples/hello_world.forth',
+            translator.main('test/integrational/examples/hello_world.forth',
                             target_file_path)
             machine.main(target_file_path, input_file_path, output_file_path)
 
@@ -47,13 +47,13 @@ class TestAll(unittest.TestCase):
 
     def test_prob1(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            shutil.copy('test/integrational/examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
             target_file_path = os.path.join(tmpdir, 'target.out')
             output_file_path = os.path.join(tmpdir, 'out.txt')
 
-            translator.main('examples/prob1.forth',
+            translator.main('test/integrational/examples/prob1.forth',
                             target_file_path)
             machine.main(target_file_path, input_file_path, output_file_path)
 
