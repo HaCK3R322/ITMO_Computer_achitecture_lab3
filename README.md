@@ -193,9 +193,9 @@ CU (control unit, управляющий юнит)
 
 В качестве тестов использовано три алгоритма:
 
-1. [hello world](hello_world.forth) -- вывод 'Hello world!'
-2. [prob1](prob1.forth) -- подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
-3. [cat](cat.forth) -- программа `cat`, повторяем ввод на выводе.
+1. [hello world](test/golden/examples/hello_world.forth) -- вывод 'Hello world!'
+2. [prob1](test/golden/examples/prob1.forth) -- подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
+3. [cat](test/golden/examples/cat.forth) -- программа `cat`, повторяем ввод на выводе.
 
 Интеграционные тесты реализованы тут: [test](./test) в двух вариантах:
 

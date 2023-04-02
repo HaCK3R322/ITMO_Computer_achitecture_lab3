@@ -376,7 +376,7 @@ class Translator:
         return self.instr, self.data
 
 
-def main(filepath):
+def main(filepath, outpath):
     with open(filepath, "r", encoding="utf-8") as source_file:
         source_code = source_file.read()
 
@@ -397,9 +397,9 @@ def main(filepath):
         print()
         print(data)
 
-        with open("program.bin", "w", encoding="utf-8") as bin_file:
+        with open(outpath, "w", encoding="utf-8") as bin_file:
             bin_file.write(json.dumps(program, indent=4))
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2])

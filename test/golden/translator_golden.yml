@@ -1,0 +1,553 @@
+code_hello_world: |-
+  72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+output_hello_world: |
+  SOURCE CODE:
+  72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+  
+  ===== translation start =====
+  TRANSLATION (0): token: 72
+  TRANSLATION (1): token: .
+  TRANSLATION (2): token: 101
+  TRANSLATION (3): token: .
+  TRANSLATION (4): token: 108
+  TRANSLATION (5): token: .
+  TRANSLATION (6): token: 108
+  TRANSLATION (7): token: .
+  TRANSLATION (8): token: 111
+  TRANSLATION (9): token: .
+  TRANSLATION (10): token: 32
+  TRANSLATION (11): token: .
+  TRANSLATION (12): token: 119
+  TRANSLATION (13): token: .
+  TRANSLATION (14): token: 111
+  TRANSLATION (15): token: .
+  TRANSLATION (16): token: 114
+  TRANSLATION (17): token: .
+  TRANSLATION (18): token: 108
+  TRANSLATION (19): token: .
+  TRANSLATION (20): token: 100
+  TRANSLATION (21): token: .
+  TRANSLATION (22): token: 33
+  TRANSLATION (23): token: .
+  Len instructions: 25; Len data: 11
+  ===== translation end =====
+  
+  
+  Translated code:
+  {'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index': 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'address': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 2057, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]}
+  
+  PUSH 0x802
+  PRINT
+  PUSH 0x803
+  PRINT
+  PUSH 0x804
+  PRINT
+  PUSH 0x804
+  PRINT
+  PUSH 0x805
+  PRINT
+  PUSH 0x806
+  PRINT
+  PUSH 0x807
+  PRINT
+  PUSH 0x805
+  PRINT
+  PUSH 0x808
+  PRINT
+  PUSH 0x804
+  PRINT
+  PUSH 0x809
+  PRINT
+  PUSH 0x80a
+  PRINT
+  HLT
+  
+  
+  [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]
+code_cat: |-
+  variable str_ptr
+  ACCEPT str_ptr !
+  
+  variable i
+  0 i !
+  
+  BEGIN
+      str_ptr @ i @ + @
+  
+      dup
+      IF
+          dup
+          .
+      THEN
+  
+      i @ 1 + i !
+  
+      0 =
+  UNTIL
+output_cat: |
+  SOURCE CODE:
+  variable str_ptr
+  ACCEPT str_ptr !
+  
+  variable i
+  0 i !
+  
+  BEGIN
+      str_ptr @ i @ + @
+  
+      dup
+      IF
+          dup
+          .
+      THEN
+  
+      i @ 1 + i !
+  
+      0 =
+  UNTIL
+  
+  ===== translation start =====
+  TRANSLATION (0): token: variable
+  TRANSLATION (2): token: ACCEPT
+  TRANSLATION (3): token: str_ptr
+  USING VAR name=str_ptr address=2050
+  TRANSLATION (4): token: !
+  TRANSLATION (5): token: variable
+  TRANSLATION (7): token: 0
+  TRANSLATION (8): token: i
+  USING VAR name=i address=2182
+  TRANSLATION (9): token: !
+  TRANSLATION (10): token: BEGIN
+  TRANSLATION (11): token: str_ptr
+  USING VAR name=str_ptr address=2050
+  TRANSLATION (12): token: @
+  TRANSLATION (13): token: i
+  USING VAR name=i address=2182
+  TRANSLATION (14): token: @
+  TRANSLATION (15): token: +
+  TRANSLATION (16): token: @
+  TRANSLATION (17): token: dup
+  TRANSLATION (18): token: IF
+  TRANSLATION (19): token: dup
+  TRANSLATION (20): token: .
+  TRANSLATION (21): token: THEN
+  TRANSLATION (22): token: i
+  USING VAR name=i address=2182
+  TRANSLATION (23): token: @
+  TRANSLATION (24): token: 1
+  TRANSLATION (25): token: +
+  TRANSLATION (26): token: i
+  USING VAR name=i address=2182
+  TRANSLATION (27): token: !
+  TRANSLATION (28): token: 0
+  TRANSLATION (29): token: =
+  TRANSLATION (30): token: UNTIL
+  Len instructions: 65; Len data: 138
+  ===== translation end =====
+  
+  
+  Translated code:
+  {'instructions': [{'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2}, {'opcode': 'DUP', 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 2}, {'opcode': 'ADD', 'related_token_index': 2}, {'opcode': 'READ', 'related_token_index': 2}, {'opcode': 'GET', 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2}, {'opcode': 'CMP', 'related_token_index': 2}, {'opcode': 'JZ', 'address': 5, 'related_token_index': 2}, {'opcode': 'DROP', 'related_token_index': 2}, {'opcode': 'DROP', 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 2}, {'opcode': 'ADD', 'related_token_index': 2}, {'opcode': 'JMP', 'address': -13, 'related_token_index': 2}, {'opcode': 'DROP', 'related_token_index': 2}, {'opcode': 'DROP', 'related_token_index': 2}, {'opcode': 'DROP', 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 3}, {'opcode': 'SET', 'related_token_index': 4}, {'opcode': 'PUSH', 'address': 2184, 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2182, 'related_token_index': 8}, {'opcode': 'SET', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 11}, {'opcode': 'GET', 'related_token_index': 12}, {'opcode': 'PUSH', 'address': 2182, 'related_token_index': 13}, {'opcode': 'GET', 'related_token_index': 14}, {'opcode': 'ADD', 'related_token_index': 15}, {'opcode': 'GET', 'related_token_index': 16}, {'opcode': 'DUP', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 21}, {'opcode': 'CMP', 'related_token_index': 21}, {'opcode': 'JZ', 'address': 5, 'related_token_index': 21}, {'opcode': 'DROP', 'related_token_index': 21}, {'opcode': 'DROP', 'related_token_index': 21}, {'opcode': 'DUP', 'related_token_index': 19}, {'opcode': 'PRINT', 'related_token_index': 20}, {'opcode': 'JMP', 'address': 2, 'related_token_index': 21}, {'opcode': 'DROP', 'related_token_index': 21}, {'opcode': 'DROP', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2182, 'related_token_index': 22}, {'opcode': 'GET', 'related_token_index': 23}, {'opcode': 'PUSH', 'address': 2185, 'related_token_index': 24}, {'opcode': 'ADD', 'related_token_index': 25}, {'opcode': 'PUSH', 'address': 2182, 'related_token_index': 26}, {'opcode': 'SET', 'related_token_index': 27}, {'opcode': 'PUSH', 'address': 2184, 'related_token_index': 28}, {'opcode': 'CMP', 'related_token_index': 29}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 29}, {'opcode': 'DROP', 'related_token_index': 29}, {'opcode': 'DROP', 'related_token_index': 29}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 29}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 29}, {'opcode': 'DROP', 'related_token_index': 29}, {'opcode': 'DROP', 'related_token_index': 29}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 29}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 30}, {'opcode': 'CMP', 'related_token_index': 30}, {'opcode': 'JNZ', 'address': 3, 'related_token_index': 30}, {'opcode': 'DROP', 'related_token_index': 30}, {'opcode': 'DROP', 'related_token_index': 30}, {'opcode': 'JMP', 'address': -39, 'related_token_index': 30}, {'opcode': 'DROP', 'related_token_index': 30}, {'opcode': 'DROP', 'related_token_index': 30}, {'opcode': 'HLT'}], 'data': [-1, 0, 2051, 0, 1, 2054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2183, 0, 0, 1]}
+  
+  PUSH 0x801
+  DUP
+  PUSH 0x805
+  ADD
+  READ
+  GET
+  PUSH 0x801
+  CMP
+  JZ +5
+  DROP
+  DROP
+  PUSH 0x804
+  ADD
+  JMP +-13
+  DROP
+  DROP
+  DROP
+  PUSH 0x805
+  PUSH 0x802
+  SET
+  PUSH 0x888
+  PUSH 0x886
+  SET
+  PUSH 0x802
+  GET
+  PUSH 0x886
+  GET
+  ADD
+  GET
+  DUP
+  PUSH 0x801
+  CMP
+  JZ +5
+  DROP
+  DROP
+  DUP
+  PRINT
+  JMP +2
+  DROP
+  DROP
+  PUSH 0x886
+  GET
+  PUSH 0x889
+  ADD
+  PUSH 0x886
+  SET
+  PUSH 0x888
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  PUSH 0x801
+  CMP
+  JNZ +3
+  DROP
+  DROP
+  JMP +-39
+  DROP
+  DROP
+  HLT
+  
+  
+  [-1, 0, 2051, 0, 1, 2054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2183, 0, 0, 1]
+
+code_prob1: |
+  variable sum
+  0 sum !
+  variable i
+  0 i !
+  BEGIN
+      i @ 1 + i !
+  
+      i @ 3 % 0 =
+      i @ 5 % 0 =
+      +
+      IF
+          i @ sum @ + sum !
+      THEN
+  
+      i @ 999 =
+  UNTIL
+  
+  
+  0 i !
+  BEGIN
+      sum @ 10 %
+      sum @ 10 / sum !
+  
+      i @ 1 + i !
+  
+      sum @ 0 =
+  UNTIL
+  
+  BEGIN
+      48 + .
+  
+      i @ 1 - i !
+      i @ 0 =
+  UNTIL
+
+
+output_prob1: |
+  SOURCE CODE:
+  variable sum
+  0 sum !
+  variable i
+  0 i !
+  BEGIN
+      i @ 1 + i !
+  
+      i @ 3 % 0 =
+      i @ 5 % 0 =
+      +
+      IF
+          i @ sum @ + sum !
+      THEN
+  
+      i @ 999 =
+  UNTIL
+  
+  
+  0 i !
+  BEGIN
+      sum @ 10 %
+      sum @ 10 / sum !
+  
+      i @ 1 + i !
+  
+      sum @ 0 =
+  UNTIL
+  
+  BEGIN
+      48 + .
+  
+      i @ 1 - i !
+      i @ 0 =
+  UNTIL
+  
+  
+  ===== translation start =====
+  TRANSLATION (0): token: variable
+  TRANSLATION (2): token: 0
+  TRANSLATION (3): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (4): token: !
+  TRANSLATION (5): token: variable
+  TRANSLATION (7): token: 0
+  TRANSLATION (8): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (9): token: !
+  TRANSLATION (10): token: BEGIN
+  TRANSLATION (11): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (12): token: @
+  TRANSLATION (13): token: 1
+  TRANSLATION (14): token: +
+  TRANSLATION (15): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (16): token: !
+  TRANSLATION (17): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (18): token: @
+  TRANSLATION (19): token: 3
+  TRANSLATION (20): token: %
+  TRANSLATION (21): token: 0
+  TRANSLATION (22): token: =
+  TRANSLATION (23): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (24): token: @
+  TRANSLATION (25): token: 5
+  TRANSLATION (26): token: %
+  TRANSLATION (27): token: 0
+  TRANSLATION (28): token: =
+  TRANSLATION (29): token: +
+  TRANSLATION (30): token: IF
+  TRANSLATION (31): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (32): token: @
+  TRANSLATION (33): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (34): token: @
+  TRANSLATION (35): token: +
+  TRANSLATION (36): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (37): token: !
+  TRANSLATION (38): token: THEN
+  TRANSLATION (39): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (40): token: @
+  TRANSLATION (41): token: 999
+  TRANSLATION (42): token: =
+  TRANSLATION (43): token: UNTIL
+  TRANSLATION (44): token: 0
+  TRANSLATION (45): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (46): token: !
+  TRANSLATION (47): token: BEGIN
+  TRANSLATION (48): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (49): token: @
+  TRANSLATION (50): token: 10
+  TRANSLATION (51): token: %
+  TRANSLATION (52): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (53): token: @
+  TRANSLATION (54): token: 10
+  TRANSLATION (55): token: /
+  TRANSLATION (56): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (57): token: !
+  TRANSLATION (58): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (59): token: @
+  TRANSLATION (60): token: 1
+  TRANSLATION (61): token: +
+  TRANSLATION (62): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (63): token: !
+  TRANSLATION (64): token: sum
+  USING VAR name=sum address=2050
+  TRANSLATION (65): token: @
+  TRANSLATION (66): token: 0
+  TRANSLATION (67): token: =
+  TRANSLATION (68): token: UNTIL
+  TRANSLATION (69): token: BEGIN
+  TRANSLATION (70): token: 48
+  TRANSLATION (71): token: +
+  TRANSLATION (72): token: .
+  TRANSLATION (73): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (74): token: @
+  TRANSLATION (75): token: 1
+  TRANSLATION (76): token: -
+  TRANSLATION (77): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (78): token: !
+  TRANSLATION (79): token: i
+  USING VAR name=i address=2053
+  TRANSLATION (80): token: @
+  TRANSLATION (81): token: 0
+  TRANSLATION (82): token: =
+  TRANSLATION (83): token: UNTIL
+  Len instructions: 145; Len data: 13
+  ===== translation end =====
+  
+  
+  Translated code:
+  {'instructions': [{'opcode': 'PUSH', 'address': 2052, 'related_token_index': 2}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 3}, {'opcode': 'SET', 'related_token_index': 4}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'SET', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 11}, {'opcode': 'GET', 'related_token_index': 12}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 13}, {'opcode': 'ADD', 'related_token_index': 14}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 15}, {'opcode': 'SET', 'related_token_index': 16}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 17}, {'opcode': 'GET', 'related_token_index': 18}, {'opcode': 'PUSH', 'address': 2056, 'related_token_index': 19}, {'opcode': 'MOD', 'related_token_index': 20}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 21}, {'opcode': 'CMP', 'related_token_index': 22}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 22}, {'opcode': 'DROP', 'related_token_index': 22}, {'opcode': 'DROP', 'related_token_index': 22}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 22}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 22}, {'opcode': 'DROP', 'related_token_index': 22}, {'opcode': 'DROP', 'related_token_index': 22}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 22}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 23}, {'opcode': 'GET', 'related_token_index': 24}, {'opcode': 'PUSH', 'address': 2057, 'related_token_index': 25}, {'opcode': 'MOD', 'related_token_index': 26}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 27}, {'opcode': 'CMP', 'related_token_index': 28}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 28}, {'opcode': 'DROP', 'related_token_index': 28}, {'opcode': 'DROP', 'related_token_index': 28}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 28}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 28}, {'opcode': 'DROP', 'related_token_index': 28}, {'opcode': 'DROP', 'related_token_index': 28}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 28}, {'opcode': 'ADD', 'related_token_index': 29}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 38}, {'opcode': 'CMP', 'related_token_index': 38}, {'opcode': 'JZ', 'address': 10, 'related_token_index': 38}, {'opcode': 'DROP', 'related_token_index': 38}, {'opcode': 'DROP', 'related_token_index': 38}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 31}, {'opcode': 'GET', 'related_token_index': 32}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 33}, {'opcode': 'GET', 'related_token_index': 34}, {'opcode': 'ADD', 'related_token_index': 35}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 36}, {'opcode': 'SET', 'related_token_index': 37}, {'opcode': 'JMP', 'address': 2, 'related_token_index': 38}, {'opcode': 'DROP', 'related_token_index': 38}, {'opcode': 'DROP', 'related_token_index': 38}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 39}, {'opcode': 'GET', 'related_token_index': 40}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 41}, {'opcode': 'CMP', 'related_token_index': 42}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 42}, {'opcode': 'DROP', 'related_token_index': 42}, {'opcode': 'DROP', 'related_token_index': 42}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 42}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 42}, {'opcode': 'DROP', 'related_token_index': 42}, {'opcode': 'DROP', 'related_token_index': 42}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 42}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 43}, {'opcode': 'CMP', 'related_token_index': 43}, {'opcode': 'JNZ', 'address': 3, 'related_token_index': 43}, {'opcode': 'DROP', 'related_token_index': 43}, {'opcode': 'DROP', 'related_token_index': 43}, {'opcode': 'JMP', 'address': -68, 'related_token_index': 43}, {'opcode': 'DROP', 'related_token_index': 43}, {'opcode': 'DROP', 'related_token_index': 43}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 44}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 45}, {'opcode': 'SET', 'related_token_index': 46}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 48}, {'opcode': 'GET', 'related_token_index': 49}, {'opcode': 'PUSH', 'address': 2059, 'related_token_index': 50}, {'opcode': 'MOD', 'related_token_index': 51}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 52}, {'opcode': 'GET', 'related_token_index': 53}, {'opcode': 'PUSH', 'address': 2059, 'related_token_index': 54}, {'opcode': 'DIV', 'related_token_index': 55}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 56}, {'opcode': 'SET', 'related_token_index': 57}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 58}, {'opcode': 'GET', 'related_token_index': 59}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 60}, {'opcode': 'ADD', 'related_token_index': 61}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 62}, {'opcode': 'SET', 'related_token_index': 63}, {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 64}, {'opcode': 'GET', 'related_token_index': 65}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 66}, {'opcode': 'CMP', 'related_token_index': 67}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 67}, {'opcode': 'DROP', 'related_token_index': 67}, {'opcode': 'DROP', 'related_token_index': 67}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 67}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 67}, {'opcode': 'DROP', 'related_token_index': 67}, {'opcode': 'DROP', 'related_token_index': 67}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 67}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 68}, {'opcode': 'CMP', 'related_token_index': 68}, {'opcode': 'JNZ', 'address': 3, 'related_token_index': 68}, {'opcode': 'DROP', 'related_token_index': 68}, {'opcode': 'DROP', 'related_token_index': 68}, {'opcode': 'JMP', 'address': -34, 'related_token_index': 68}, {'opcode': 'DROP', 'related_token_index': 68}, {'opcode': 'DROP', 'related_token_index': 68}, {'opcode': 'PUSH', 'address': 2060, 'related_token_index': 70}, {'opcode': 'ADD', 'related_token_index': 71}, {'opcode': 'PRINT', 'related_token_index': 72}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 73}, {'opcode': 'GET', 'related_token_index': 74}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 75}, {'opcode': 'SUB', 'related_token_index': 76}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 77}, {'opcode': 'SET', 'related_token_index': 78}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 79}, {'opcode': 'GET', 'related_token_index': 80}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 81}, {'opcode': 'CMP', 'related_token_index': 82}, {'opcode': 'JZ', 'address': 4, 'related_token_index': 82}, {'opcode': 'DROP', 'related_token_index': 82}, {'opcode': 'DROP', 'related_token_index': 82}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 82}, {'opcode': 'JMP', 'address': 3, 'related_token_index': 82}, {'opcode': 'DROP', 'related_token_index': 82}, {'opcode': 'DROP', 'related_token_index': 82}, {'opcode': 'PUSH', 'address': 2048, 'related_token_index': 82}, {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 83}, {'opcode': 'CMP', 'related_token_index': 83}, {'opcode': 'JNZ', 'address': 3, 'related_token_index': 83}, {'opcode': 'DROP', 'related_token_index': 83}, {'opcode': 'DROP', 'related_token_index': 83}, {'opcode': 'JMP', 'address': -27, 'related_token_index': 83}, {'opcode': 'DROP', 'related_token_index': 83}, {'opcode': 'DROP', 'related_token_index': 83}, {'opcode': 'HLT'}], 'data': [-1, 0, 2051, 0, 0, 2054, 0, 1, 3, 5, 999, 10, 48]}
+  
+  PUSH 0x804
+  PUSH 0x802
+  SET
+  PUSH 0x804
+  PUSH 0x805
+  SET
+  PUSH 0x805
+  GET
+  PUSH 0x807
+  ADD
+  PUSH 0x805
+  SET
+  PUSH 0x805
+  GET
+  PUSH 0x808
+  MOD
+  PUSH 0x804
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  PUSH 0x805
+  GET
+  PUSH 0x809
+  MOD
+  PUSH 0x804
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  ADD
+  PUSH 0x801
+  CMP
+  JZ +10
+  DROP
+  DROP
+  PUSH 0x805
+  GET
+  PUSH 0x802
+  GET
+  ADD
+  PUSH 0x802
+  SET
+  JMP +2
+  DROP
+  DROP
+  PUSH 0x805
+  GET
+  PUSH 0x80a
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  PUSH 0x801
+  CMP
+  JNZ +3
+  DROP
+  DROP
+  JMP +-68
+  DROP
+  DROP
+  PUSH 0x804
+  PUSH 0x805
+  SET
+  PUSH 0x802
+  GET
+  PUSH 0x80b
+  MOD
+  PUSH 0x802
+  GET
+  PUSH 0x80b
+  DIV
+  PUSH 0x802
+  SET
+  PUSH 0x805
+  GET
+  PUSH 0x807
+  ADD
+  PUSH 0x805
+  SET
+  PUSH 0x802
+  GET
+  PUSH 0x804
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  PUSH 0x801
+  CMP
+  JNZ +3
+  DROP
+  DROP
+  JMP +-34
+  DROP
+  DROP
+  PUSH 0x80c
+  ADD
+  PRINT
+  PUSH 0x805
+  GET
+  PUSH 0x807
+  SUB
+  PUSH 0x805
+  SET
+  PUSH 0x805
+  GET
+  PUSH 0x804
+  CMP
+  JZ +4
+  DROP
+  DROP
+  PUSH 0x801
+  JMP +3
+  DROP
+  DROP
+  PUSH 0x800
+  PUSH 0x801
+  CMP
+  JNZ +3
+  DROP
+  DROP
+  JMP +-27
+  DROP
+  DROP
+  HLT
+  
+  
+  [-1, 0, 2051, 0, 0, 2054, 0, 1, 3, 5, 999, 10, 48]

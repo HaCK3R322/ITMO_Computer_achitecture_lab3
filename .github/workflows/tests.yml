@@ -19,3 +19,7 @@ jobs:
     - name: test simulation
       run: |
         python -m unittest -v -b test/unittests/TestSimulation.py 
+
+    - name: test golden tests
+      run: |
+        pytest --markers=golden_test
