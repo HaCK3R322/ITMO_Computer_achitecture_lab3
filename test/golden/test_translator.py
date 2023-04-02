@@ -11,7 +11,7 @@ import os
 
 @pytest.fixture
 def golden_test_input():
-    with open('translator_golden.yml', 'r') as file:
+    with open('test/golden/translator_golden.yml', 'r') as file:
         test_data = yaml.safe_load(file)
     return test_data
 
