@@ -9,7 +9,7 @@ class TestTranslator(unittest.TestCase):
     def test_translate_simple_digits_push(self):
         # given
         code = "1 2 3 10"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         # when
         instructions, data = translator.translate()
@@ -26,7 +26,7 @@ class TestTranslator(unittest.TestCase):
 
     def test_translate_if_then(self):
         code = "IF 10 THEN"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         instructions, data = translator.translate()
 
@@ -45,7 +45,7 @@ class TestTranslator(unittest.TestCase):
 
     def test_translate_loop(self):
         code = "BEGIN 228 UNTIL"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
         instructions, data = translator.translate()
 
         ideal_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
@@ -63,7 +63,7 @@ class TestTranslator(unittest.TestCase):
 
     def test_translate_nested_loop(self):
         code = "BEGIN 10 BEGIN 20 UNTIL UNTIL"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
         instructions, data = translator.translate()
 
         ideal_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
@@ -90,33 +90,33 @@ class TestTranslator(unittest.TestCase):
 
     def test_variable_digit_name(self):
         code = "variable 41"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
 
     def test_varaible_redeclaration(self):
         code = "variable a variable a"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
 
     def test_variable_using_defined_names(self):
         code = "variable IF"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
 
         code = "variable +"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
 
         code = "variable UNTIL"
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
@@ -124,7 +124,7 @@ class TestTranslator(unittest.TestCase):
     def test_unexpected_token(self):
         code = "2 48 + . this_is_unexpected_token BEGIN IF THEN UNTIL"
 
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
@@ -132,10 +132,27 @@ class TestTranslator(unittest.TestCase):
     def test_not_closed_loop(self):
         code = "BEGIN UNTIL BEGIN BEGIN  UNTIL UNTIL 111 BEGIN BEGIN UNTIL"
 
-        translator = Translator(code)
+        translator = Translator(code, optimize=True)
 
         with self.assertRaises(SyntaxError):
             translator.translate()
+
+    def test_data_optimize_translation(self):
+        code = '1 1 1 2 2 2 3 3 3'
+
+        translator_optimize_false = Translator(code, optimize=False)
+        translator_optimize_true = Translator(code, optimize=True)
+
+        instructions, data_optimize_false = translator_optimize_false.translate()
+        instructions, data_optimized_true = translator_optimize_true.translate()
+
+        self.assertNotEqual(data_optimized_true, data_optimize_false)
+
+        excpected_data_optimize_false = [-1, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
+        excpected_data_optimize_true = [-1, 0, 1, 2, 3]
+
+        self.assertEqual(data_optimize_false, excpected_data_optimize_false)
+        self.assertEqual(data_optimized_true, excpected_data_optimize_true)
 
 
 if __name__ == "__main__":

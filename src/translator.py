@@ -45,7 +45,7 @@ def get_pseudo_code(instructions):
 
 
 class Translator:
-    def __init__(self, code_text):
+    def __init__(self, code_text, optimize=False):
         self.tokens = code_text.split()
 
         self.data = []
@@ -67,6 +67,12 @@ class Translator:
                       "@", "!",
                       "SWAP", "SET", "DUP", "OVER", "DROP",
                       ".", "ACCEPT"}
+
+        self.optimize = optimize
+
+        self.token_counter = 0
+
+        self.static_digits = []
 
     def is_variable(self, token):
         for var in self.vars:
@@ -105,13 +111,13 @@ class Translator:
 
         if begin_count != until_count:
             raise SyntaxError(f"Number of \"BEGIN\" and \"UNTIL\" not matched: "
-                                   f"begin_count = {begin_count}; "
-                                   f"until_count = {until_count}")
+                              f"begin_count = {begin_count}; "
+                              f"until_count = {until_count}")
 
         if then_count != if_count:
             raise SyntaxError(f"Number of \"IF\" and \"THEN\" not matched: "
-                                   f"if_count = {if_count}; "
-                                   f"then_count = {then_count}")
+                              f"if_count = {if_count}; "
+                              f"then_count = {then_count}")
 
     def zero_division_check(self):
         for index, token in enumerate(self.tokens):
@@ -120,7 +126,193 @@ class Translator:
                     if self.tokens[index - 1] == "0":
                         raise Warning(f"potential zero division related with token #{index}")
 
-    def translate(self, optimize=False):
+    def translate_to_instruction(self, opcode, address=None):
+        if address is None:
+            return {"opcode": opcode, "related_token_index": self.token_counter}
+        else:
+            return {"opcode": opcode, "address": address, "related_token_index": self.token_counter}
+
+    def translate_IF(self):
+        self.if_stack.append(0)
+
+    def translate_THEN(self, number_of_added_instructions):
+        to_insert_before = [
+            self.translate_to_instruction("PUSH", address=self.data_FALSE),
+            self.translate_to_instruction("CMP"),
+            self.translate_to_instruction("JZ", address=3 + number_of_added_instructions),
+            self.translate_to_instruction("DROP"),
+            self.translate_to_instruction("DROP")
+        ]
+
+        to_insert_after = [
+            self.translate_to_instruction("JMP", address=2),
+            self.translate_to_instruction("DROP"),
+            self.translate_to_instruction("DROP")
+        ]
+
+        instr_before_if = self.instr[:len(self.instr) - number_of_added_instructions]
+        instr_in_statement = self.instr[len(self.instr) - number_of_added_instructions:len(self.instr)]
+
+        total = instr_before_if + to_insert_before + instr_in_statement + to_insert_after
+        self.instr = total
+
+        self.if_stack.pop()
+
+    def translate_BEGIN(self):
+        self.loop_stack.append(0)
+
+    def translate_UNTIL(self, number_of_added_instructions):
+        self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
+        self.instr.append(self.translate_to_instruction("CMP"))
+        self.instr.append(self.translate_to_instruction("JNZ", address=3))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("JMP", address=(-number_of_added_instructions - 6)))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+
+        self.loop_stack.pop()
+
+    def define_variable(self, name):
+        # check if new variable name is unique
+        for var in self.vars:
+            if name == var["name"]:
+                raise SyntaxError(f"Variable with name \"{name}\" already exists!")
+
+        # check if name is not some predefined thing
+        if name.upper() in self.scope:
+            raise SyntaxError(f"Invalid variable name \"{name}\"")
+
+        # check if variable name is not digit
+        if name.lstrip('-+').isdigit():
+            raise SyntaxError(f"Variable name cannot be numeric")
+
+        self.vars.append({"name": name, "address": self.data_start})
+        self.data.append(self.data_start + 1)
+        self.data_start += 1
+        self.data.append(0)
+        self.data_start += 1
+
+    def translate_digit(self, token_digit):
+        if self.optimize:  # if optimize == True
+            digit_found = False
+            for digit in self.static_digits:  # try to find already allocated digit with that value and push it
+                if digit["value"] == token_digit:
+                    digit_found = True
+                    self.instr.append(self.translate_to_instruction("PUSH", address=digit["address"]))
+
+            if not digit_found:  # if not found then add to data and remember it
+                self.data.append(token_digit)
+                self.instr.append(self.translate_to_instruction("PUSH", address=self.data_start))
+
+                self.static_digits.append({"value": token_digit, "address": self.data_start})
+
+                self.data_start += 1
+        else:
+            self.data.append(token_digit)
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_start))
+            self.data_start += 1
+
+    def translate_comparation(self, symbol):
+        if symbol == "=":  # a b =   ===>   a == b ? -1 : 0
+            self.instr.append(self.translate_to_instruction("CMP"))
+
+            self.instr.append(self.translate_to_instruction("JZ", address=4))
+            # pushing 0 (false)
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
+            self.instr.append(self.translate_to_instruction("JMP", address=3))
+            # pushing -1 (true)
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
+
+        elif symbol == "<":  # a b <   ===>   a < b ? -1 : 0
+            self.instr.append(self.translate_to_instruction("CMP"))
+
+            self.instr.append(self.translate_to_instruction("JL", address=4))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
+            self.instr.append(self.translate_to_instruction("JMP", address=3))
+
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
+
+        elif symbol == ">":  # a b >   ===>   a > b ? -1 : 0
+            self.instr.append(self.translate_to_instruction("CMP"))
+
+            self.instr.append(self.translate_to_instruction("JL", address=4))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
+            self.instr.append(self.translate_to_instruction("JMP", address=3))
+
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("DROP"))
+            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
+
+    def translate_ACCEPT(self):
+        self.data.append(1)
+        one_ptr = self.data_start
+        self.data_start += 1
+
+        str_start_ptr = self.data_start
+        self.data.append(self.data_start + 1)
+        self.data_start += 1
+
+        self.data += [0] * 128
+        self.data_start += 128  # allocate 128 cells for string
+
+        self.instr.append(self.translate_to_instruction("PUSH", self.data_FALSE))  # counter
+
+        self.instr.append(self.translate_to_instruction("DUP"))  # dup counter to not lose it
+        self.instr.append(self.translate_to_instruction("PUSH", str_start_ptr))  # push str_ptr
+        self.instr.append(self.translate_to_instruction("ADD"))  # move ptr to cell correspondly to counter
+        self.instr.append(self.translate_to_instruction("READ"))  # read to cell from buffer (doesn't pop stack)
+
+        self.instr.append(self.translate_to_instruction("GET"))  # get value
+        self.instr.append(self.translate_to_instruction("PUSH", self.data_FALSE))
+        self.instr.append(self.translate_to_instruction("CMP"))
+        self.instr.append(self.translate_to_instruction("JZ", address=5))  # if value (char) is 0, end
+        self.instr.append(self.translate_to_instruction("DROP"))  # if char is not 0, then drop all shit
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("PUSH", one_ptr))  # and increase counter by 1
+        self.instr.append(self.translate_to_instruction("ADD"))
+        self.instr.append(self.translate_to_instruction("JMP", address=-13))  # move to the next char
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("PUSH", address=str_start_ptr))  # push str address
+
+    def translate_direct(self, token):
+        opcode = None
+        token = token.upper()
+        if token == "+":
+            opcode = "ADD"
+        elif token == "-":
+            opcode = "SUB"
+        elif token == "%":
+            opcode = "MOD"
+        elif token == "*":
+            opcode = "MUL"
+        elif token == "/":
+            opcode = "DIV"
+        elif token == "!":
+            opcode = "SET"
+        elif token == "@":
+            opcode = "GET"
+        elif token == ".":
+            opcode = "PRINT"
+
+        elif token in {"SWAP", "DUP", "OVER", "DROP"}:
+            opcode = token
+
+        self.instr.append(self.translate_to_instruction(opcode))
+
+    def translate(self):
         # fast checking on syntax errors
         self.check_contructions()
 
@@ -130,105 +322,27 @@ class Translator:
         except Warning as warning:
             print("----- WARNING: ", warning, " -----")
 
-        static_digits = []
-
-        i = 0
-
-        def translate_to_instruction(opcode, address=None):
-            if address is None:
-                return {"opcode": opcode, "related_token_index": i}
-            else:
-                return {"opcode": opcode, "address": address, "related_token_index": i}
-
-        while i < len(self.tokens):
+        while self.token_counter < len(self.tokens):
             instr_len_before = len(self.instr)
+            token = self.tokens[self.token_counter]
+            print("TRANSLATION (" + str(self.token_counter) + "): token: " + token)
 
-            token = self.tokens[i]
-
-            print("TRANSLATION (" + str(i) + "): token: " + token)
-
-            if token.upper() == "BEGIN":
-                self.loop_stack.append(0)
-
-                i += 1
-            elif token.upper() == "UNTIL":
-                assert len(self.loop_stack) > 0, f'Syntax error token {i}: closing UNTIL without opening BEGIN'
-
-                number_of_added_instructions = self.loop_stack[len(self.loop_stack) - 1]
-
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
-                self.instr.append(translate_to_instruction("CMP"))
-                self.instr.append(translate_to_instruction("JNZ", address=3))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("JMP", address=(-number_of_added_instructions - 6)))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-
-                self.loop_stack.pop()
-
-                i += 1
-
-            elif token.upper() == "IF":
-                self.if_stack.append(0)
-
-                i += 1
+            if token.upper() == "IF":
+                self.translate_IF()
             elif token.upper() == "THEN":
-                assert len(self.if_stack) > 0, f'Syntax error token {i}: closing THEN without opening IF'
-
                 number_of_added_instructions = self.if_stack[len(self.if_stack) - 1]
+                self.translate_THEN(number_of_added_instructions)
 
-                to_insert_before = [
-                    translate_to_instruction("PUSH", address=self.data_FALSE),
-                    translate_to_instruction("CMP"),
-                    translate_to_instruction("JZ", address=3 + number_of_added_instructions),
-                    translate_to_instruction("DROP"),
-                    translate_to_instruction("DROP")
-                ]
+            elif token.upper() == "BEGIN":
+                self.translate_BEGIN()
+            elif token.upper() == "UNTIL":
+                number_of_added_instructions = self.loop_stack[len(self.loop_stack) - 1]
+                self.translate_UNTIL(number_of_added_instructions)
 
-                to_insert_after = [
-                    translate_to_instruction("JMP", address=2),
-                    translate_to_instruction("DROP"),
-                    translate_to_instruction("DROP")
-                ]
-
-                instr_before_if = self.instr[:len(self.instr) - number_of_added_instructions]
-                instr_in_statement = self.instr[len(self.instr) - number_of_added_instructions:len(self.instr)]
-
-                total = instr_before_if + to_insert_before + instr_in_statement + to_insert_after
-                self.instr = total
-
-                self.if_stack.pop()
-
-                i += 1
-
-            # variable translation logic
             elif token.upper() == "VARIABLE":
-                if i == len(self.tokens) - 1:
-                    raise SyntaxError(f"Not named variable")
-
-                name = self.tokens[i + 1]
-
-                # check if new variable name is unique
-                for var in self.vars:
-                    if name == var["name"]:
-                        raise SyntaxError(f"Variable with name \"{name}\" already exists!")
-
-                # check if name is not some predefined thing
-                if name.upper() in self.scope:
-                    raise SyntaxError(f"Invalid variable name \"{name}\"")
-
-                # check if variable name is not digit
-                if name.lstrip('-+').isdigit():
-                    raise SyntaxError(f"Variable name cannot be numeric")
-
-                self.vars.append({"name": self.tokens[i + 1], "address": self.data_start})
-                self.data.append(self.data_start + 1)
-                self.data_start += 1
-                self.data.append(0)
-                self.data_start += 1
-
-                i += 2
+                name = self.tokens[self.token_counter + 1]
+                self.define_variable(name)
+                self.token_counter += 1
 
             elif self.is_variable(token):
                 var = self.get_variable_by_name(token)
@@ -236,147 +350,27 @@ class Translator:
 
                 print(f'USING VAR name={var["name"]} address={address}')
 
-                self.instr.append(translate_to_instruction("PUSH", address=address))
-
-                i += 1
+                self.instr.append(self.translate_to_instruction("PUSH", address=address))
 
             # if token is some digit value
             elif token.lstrip('-+').isdigit():
-                if optimize:  # if optimize == True
-                    digit_found = False
-                    for digit in static_digits:  # try to find already allocated digit with that value and push it
-                        if digit["value"] == int(token):
-                            digit_found = True
-                            self.instr.append(translate_to_instruction("PUSH", address=digit["address"]))
+                token_digit = int(token)
+                self.translate_digit(token_digit)
 
-                    if not digit_found:  # if not found then add to data and remember it
-                        self.data.append(int(token))
-                        self.instr.append(translate_to_instruction("PUSH", address=self.data_start))
+            elif token.upper() in {'=', '<', '>'}:
+                symbol = token
+                self.translate_comparation(symbol)
 
-                        static_digits.append({"value": int(token), "address": self.data_start})
-
-                        self.data_start += 1
-                else:
-                    self.data.append(int(token))
-                    self.instr.append(translate_to_instruction("PUSH", address=self.data_start))
-                    self.data_start += 1
-
-                i += 1
-
-            elif token.upper() == "=":  # a b =   ===>   a == b ? -1 : 0
-                self.instr.append(translate_to_instruction("CMP"))
-
-                self.instr.append(translate_to_instruction("JZ", address=4))
-                # pushing 0 (false)
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
-                self.instr.append(translate_to_instruction("JMP", address=3))
-                # pushing -1 (true)
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_TRUE))
-
-                i += 1
-
-            elif token.upper() == "<":  # a b <   ===>   a < b ? -1 : 0
-                self.instr.append(translate_to_instruction("CMP"))
-
-                self.instr.append(translate_to_instruction("JL", address=4))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_TRUE))
-                self.instr.append(translate_to_instruction("JMP", address=3))
-
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
-
-                i += 1
-
-            elif token.upper() == ">":  # a b >   ===>   a > b ? -1 : 0
-                self.instr.append(translate_to_instruction("CMP"))
-
-                self.instr.append(translate_to_instruction("JL", address=4))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_FALSE))
-                self.instr.append(translate_to_instruction("JMP", address=3))
-
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=self.data_TRUE))
-
-                i += 1
-
-            # direct instructions translation
             elif token.upper() in {"+", "-", "%", "*", "/", "!", "@", ".", "SWAP", "SET", "DUP", "OVER", "DROP"}:
-                opcode = None
-                token = token.upper()
-                if token == "+":
-                    opcode = "ADD"
-                elif token == "-":
-                    opcode = "SUB"
-                elif token == "%":
-                    opcode = "MOD"
-                elif token == "*":
-                    opcode = "MUL"
-                elif token == "/":
-                    opcode = "DIV"
-                elif token == "!":
-                    opcode = "SET"
-                elif token == "@":
-                    opcode = "GET"
-                elif token == ".":
-                    opcode = "PRINT"
-
-                elif token in {"SWAP", "DUP", "OVER", "DROP"}:
-                    opcode = token
-
-                self.instr.append(translate_to_instruction(opcode))
-
-                i += 1
+                self.translate_direct(token)
 
             elif token.upper() == "ACCEPT":
-                self.data.append(1)
-                one_ptr = self.data_start
-                self.data_start += 1
-
-                str_start_ptr = self.data_start
-                self.data.append(self.data_start + 1)
-                self.data_start += 1
-
-                self.data += [0] * 128
-                self.data_start += 128  # allocate 128 cells for string
-
-                self.instr.append(translate_to_instruction("PUSH", self.data_FALSE))  # counter
-
-                self.instr.append(translate_to_instruction("DUP"))  # dup counter to not lose it
-                self.instr.append(translate_to_instruction("PUSH", str_start_ptr))  # push str_ptr
-                self.instr.append(translate_to_instruction("ADD"))  # move ptr to cell correspondly to counter
-                self.instr.append(translate_to_instruction("READ"))  # read to cell from buffer (doesn't pop stack)
-
-                self.instr.append(translate_to_instruction("GET"))  # get value
-                self.instr.append(translate_to_instruction("PUSH", self.data_FALSE))
-                self.instr.append(translate_to_instruction("CMP"))
-                self.instr.append(translate_to_instruction("JZ", address=5))  # if value (char) is 0, end
-                self.instr.append(translate_to_instruction("DROP"))  # if char is not 0, then drop all shit
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", one_ptr))  # and increase counter by 1
-                self.instr.append(translate_to_instruction("ADD"))
-                self.instr.append(translate_to_instruction("JMP", address=-13))  # move to the next char
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("DROP"))
-                self.instr.append(translate_to_instruction("PUSH", address=str_start_ptr))  # push str address
-
-                i += 1
+                self.translate_ACCEPT()
 
             else:
-                raise SyntaxError(f'Unrecognizible token #{i - 1}: \"{token}\"')
+                raise SyntaxError(f'Unrecognizible token #{self.token_counter - 1}: \"{token}\"')
 
             number_of_added_instructions = len(self.instr) - instr_len_before
-
             if len(self.if_stack) > 0:
                 for if_addedd_instr_index in range(len(self.if_stack)):
                     self.if_stack[if_addedd_instr_index] += number_of_added_instructions
@@ -385,7 +379,11 @@ class Translator:
                 for loop_addedd_instr_index in range(len(self.loop_stack)):
                     self.loop_stack[loop_addedd_instr_index] += number_of_added_instructions
 
+            self.token_counter += 1
+
         self.instr.append({"opcode": "HLT"})
+
+        print(f"Len instructions: {len(self.instr)}; Len data: {len(self.data)}")
         return self.instr, self.data
 
 
@@ -397,8 +395,8 @@ def main(filepath):
         print(source_code)
 
         print("\n===== translation start =====")
-        translator = Translator(source_code)
-        instructions, data = translator.translate(optimize=True)
+        translator = Translator(source_code, optimize=True)
+        instructions, data = translator.translate()
         print("===== translation end =====\n")
 
         program = {"instructions": instructions, "data": data}
