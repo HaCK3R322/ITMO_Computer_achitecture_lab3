@@ -89,7 +89,7 @@ Translator + Proccessor
 
 | Syntax | Mnemonic     | Кол-во тактов | Comment                          |
 |:-------|:-------------|---------------|:---------------------------------|
-|        | PUSH `<addr>`| 5             | запушить в стек значение ячейки по адресу `<addr>`|
+|        | PUSH `<addr>`| 4             | запушить в стек значение ячейки по адресу `<addr>`|
 | `!`    | SET          | 7             | см. язык                         |
 | `@`    | GET          | 5             | см. язык                         |
 |        | CMP          | 4             | вычесть из левого вход `ALU` правый вход. Используется для установления флагов|
@@ -193,14 +193,15 @@ CU (control unit, управляющий юнит)
 
 В качестве тестов использовано три алгоритма:
 
-1. [hello world](test/integrational/examples/hello_world.forth) -- вывод 'Hello world!'
-2. [prob1](test/integrational/examples/prob1.forth) -- подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
-3. [cat](test/integrational/examples/cat.forth) -- программа `cat`, повторяем ввод на выводе.
+1. вывод 'Hello world!'
+2. подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
+3. программа `cat`, повторяем ввод на выводе.
 
-Интеграционные тесты реализованы тут: [test](./test) в двух вариантах:
+Интеграционные тесты реализованы тут: [test](./test) в трех вариантах:
 
-- через golden tests ПОКА НЕ ДОДЕЛАНО
-- через unittest
+- Golden Tests (проверка стандартного вывода программ)
+- Unit Tests (проверка отдельных частей кода)
+- Integration Test (проверка как разные кодовые базы взаимодействуют между собой)
 
 CI:
 
@@ -218,14 +219,28 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+         python -m pip install --upgrade pip
+         pip install -r requirements.txt
         
     - name: test translator
       run: |
-        python -m unittest -v -b test/TestTranslator.py 
+        python -m unittest -v -b test/unittests/TestTranslator.py 
 
     - name: test simulation
       run: |
-        python -m unittest -v -b test/TestSimulation.py 
+        python -m unittest -v -b test/unittests/TestSimulation.py 
+
+    - name: test golden tests
+      run: |
+        pytest 
+
+    - name: test integration
+      run: |
+        python -m unittest -v -b test/integrational/TestAll.py 
+
 ```
 
 Пример использования и журнал работы процессора на примере `hello world`:
@@ -262,21 +277,28 @@ TRANSLATION (20): token: 100
 TRANSLATION (21): token: .
 TRANSLATION (22): token: 33
 TRANSLATION (23): token: .
+Len instructions: 25; Len data: 11
 ===== translation end =====
 
 
 Translated code:
-{'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index'
-: 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opco
-de': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH
-', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'addr
-ess': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 20
-57, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 
-101, 108, 111, 32, 119, 114, 100, 33]}
+{'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index': 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'address': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 2057, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]}
 
 PUSH 0x802
 PRINT
 PUSH 0x803
+PRINT
+PUSH 0x804
+PRINT
+PUSH 0x804
+PRINT
+PUSH 0x805
+PRINT
+PUSH 0x806
+PRINT
+PUSH 0x807
+PRINT
+PUSH 0x805
 PRINT
 PUSH 0x808
 PRINT
@@ -290,6 +312,9 @@ HLT
 
 
 [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]
+
+Process finished with exit code 0
+
 > cat program.bin 
 {                                   
     "instructions": [               
@@ -420,7 +445,7 @@ HLT
     ]
 }
 
-> ./machine.py target.out examples/foo_input.txt
+> ./machine.py target.out examples/foo_input.txt out.txt
 INFO:root:=====   instruction fetch   =====
 DEBUG:root:decoded instruction opcode: PUSH
 INFO:root:----- PUSH -----
