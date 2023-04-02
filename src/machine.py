@@ -476,10 +476,7 @@ class Simpulation:
         logging.info("INSTRUCTION COUNTER: %d", instruction_counter)
 
 
-def main(args):
-    program_file_path = args[0]
-    input_file_path = args[1]
-    output_file_path = args[2]
+def main(program_file_path, input_file_path, output_file_path):
 
     with open(program_file_path, encoding="utf-8") as program_file:
         program = json.loads(program_file.read())

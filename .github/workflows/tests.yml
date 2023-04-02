@@ -28,3 +28,7 @@ jobs:
     - name: test golden tests
       run: |
         pytest 
+
+    - name: test integration
+      run: |
+        python -m unittest -v -b test/integrational/TestAll.py 
