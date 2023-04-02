@@ -214,45 +214,32 @@ class Translator:
             self.data_start += 1
 
     def translate_comparation(self, symbol):
-        if symbol == "=":  # a b =   ===>   a == b ? -1 : 0
-            self.instr.append(self.translate_to_instruction("CMP"))
+        self.instr.append(self.translate_to_instruction("CMP"))  # cmp two numbers to set flags
 
-            self.instr.append(self.translate_to_instruction("JZ", address=4))
-            # pushing 0 (false)
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
-            self.instr.append(self.translate_to_instruction("JMP", address=3))
-            # pushing -1 (true)
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
+        if symbol == "=":
+            self.instr.append(self.translate_to_instruction("JZ", address=4))  # ZF means equal
+            address_not_jump = self.data_FALSE
+            address_jump = self.data_TRUE
+        else:
+            self.instr.append(self.translate_to_instruction("JL", address=4))  # there we're watching on NF
 
-        elif symbol == "<":  # a b <   ===>   a < b ? -1 : 0
-            self.instr.append(self.translate_to_instruction("CMP"))
+            if symbol == ">":
+                address_not_jump = self.data_FALSE
+                address_jump = self.data_TRUE
+            else:
+                address_not_jump = self.data_TRUE
+                address_jump = self.data_FALSE
 
-            self.instr.append(self.translate_to_instruction("JL", address=4))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
-            self.instr.append(self.translate_to_instruction("JMP", address=3))
+        # this will work if jump doesn't happen
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("PUSH", address=address_not_jump))
+        self.instr.append(self.translate_to_instruction("JMP", address=3))
 
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
-
-        elif symbol == ">":  # a b >   ===>   a > b ? -1 : 0
-            self.instr.append(self.translate_to_instruction("CMP"))
-
-            self.instr.append(self.translate_to_instruction("JL", address=4))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_FALSE))
-            self.instr.append(self.translate_to_instruction("JMP", address=3))
-
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("DROP"))
-            self.instr.append(self.translate_to_instruction("PUSH", address=self.data_TRUE))
+        # here we jump
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("DROP"))
+        self.instr.append(self.translate_to_instruction("PUSH", address=address_jump))
 
     def translate_ACCEPT(self):
         self.data.append(1)
@@ -321,6 +308,8 @@ class Translator:
             self.zero_division_check()
         except Warning as warning:
             print("----- WARNING: ", warning, " -----")
+
+        self.token_counter = 0
 
         while self.token_counter < len(self.tokens):
             instr_len_before = len(self.instr)

@@ -2,6 +2,9 @@ import unittest
 from src import Translator
 
 
+# По усти главная функция транлсятора "translate()" просто выбирает какую функцию трансляции использовать для токена,
+# все эти тесты тестируют отдельные участки кода и в праве называться unit-тестами
+
 class TestTranslator(unittest.TestCase):
     def setUp(self):
         print(self._testMethodDoc)
@@ -30,63 +33,76 @@ class TestTranslator(unittest.TestCase):
 
         instructions, data = translator.translate()
 
-        ideal_instructions = [{'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2},
-                              {'opcode': 'CMP', 'related_token_index': 2},
-                              {'opcode': 'JZ', 'address': 4, 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
-                              {'opcode': 'JMP', 'address': 2, 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'HLT'}]
+        expected_instructions = [{'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2},
+                                 {'opcode': 'CMP', 'related_token_index': 2},
+                                 {'opcode': 'JZ', 'address': 4, 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
+                                 {'opcode': 'JMP', 'address': 2, 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'HLT'}]
 
-        self.assertEqual(instructions, ideal_instructions)
+        self.assertEqual(instructions, expected_instructions)
 
     def test_translate_loop(self):
         code = "BEGIN 228 UNTIL"
         translator = Translator(code, optimize=True)
         instructions, data = translator.translate()
 
-        ideal_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
-                              {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2},
-                              {'opcode': 'CMP', 'related_token_index': 2},
-                              {'opcode': 'JNZ', 'address': 3, 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'JMP', 'address': -7, 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'DROP', 'related_token_index': 2},
-                              {'opcode': 'HLT'}]
+        expected_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
+                                 {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 2},
+                                 {'opcode': 'CMP', 'related_token_index': 2},
+                                 {'opcode': 'JNZ', 'address': 3, 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'JMP', 'address': -7, 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'DROP', 'related_token_index': 2},
+                                 {'opcode': 'HLT'}]
 
-        self.assertEqual(instructions, ideal_instructions)
+        self.assertEqual(instructions, expected_instructions)
 
     def test_translate_nested_loop(self):
         code = "BEGIN 10 BEGIN 20 UNTIL UNTIL"
         translator = Translator(code, optimize=True)
         instructions, data = translator.translate()
 
-        ideal_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
-                              {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 3},
-                              {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 4},
-                              {'opcode': 'CMP', 'related_token_index': 4},
-                              {'opcode': 'JNZ', 'address': 3, 'related_token_index': 4},
-                              {'opcode': 'DROP', 'related_token_index': 4},
-                              {'opcode': 'DROP', 'related_token_index': 4},
-                              {'opcode': 'JMP', 'address': -7, 'related_token_index': 4},
-                              {'opcode': 'DROP', 'related_token_index': 4},
-                              {'opcode': 'DROP', 'related_token_index': 4},
-                              {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 5},
-                              {'opcode': 'CMP', 'related_token_index': 5},
-                              {'opcode': 'JNZ', 'address': 3, 'related_token_index': 5},
-                              {'opcode': 'DROP', 'related_token_index': 5},
-                              {'opcode': 'DROP', 'related_token_index': 5},
-                              {'opcode': 'JMP', 'address': -16, 'related_token_index': 5},
-                              {'opcode': 'DROP', 'related_token_index': 5},
-                              {'opcode': 'DROP', 'related_token_index': 5},
-                              {'opcode': 'HLT'}]
+        expected_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
+                                 {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 3},
+                                 {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 4},
+                                 {'opcode': 'CMP', 'related_token_index': 4},
+                                 {'opcode': 'JNZ', 'address': 3, 'related_token_index': 4},
+                                 {'opcode': 'DROP', 'related_token_index': 4},
+                                 {'opcode': 'DROP', 'related_token_index': 4},
+                                 {'opcode': 'JMP', 'address': -7, 'related_token_index': 4},
+                                 {'opcode': 'DROP', 'related_token_index': 4},
+                                 {'opcode': 'DROP', 'related_token_index': 4},
+                                 {'opcode': 'PUSH', 'address': 2049, 'related_token_index': 5},
+                                 {'opcode': 'CMP', 'related_token_index': 5},
+                                 {'opcode': 'JNZ', 'address': 3, 'related_token_index': 5},
+                                 {'opcode': 'DROP', 'related_token_index': 5},
+                                 {'opcode': 'DROP', 'related_token_index': 5},
+                                 {'opcode': 'JMP', 'address': -16, 'related_token_index': 5},
+                                 {'opcode': 'DROP', 'related_token_index': 5},
+                                 {'opcode': 'DROP', 'related_token_index': 5},
+                                 {'opcode': 'HLT'}]
 
-        self.assertEqual(instructions, ideal_instructions)
+        self.assertEqual(instructions, expected_instructions)
+
+    def test_variable_declaraion_and_usage(self):
+        code = "variable a a"
+        translator = Translator(code, optimize=True)
+        instructions, data = translator.translate()
+
+        expected_instructions = [{'opcode': 'PUSH', 'address': 0x802, 'related_token_index': 2},
+                                 {'opcode': 'HLT'}]
+
+        expected_data = [-1, 0, 0x803, 0]
+
+        self.assertEqual(instructions, expected_instructions)
+        self.assertEqual(data, expected_data)
 
     def test_variable_digit_name(self):
         code = "variable 41"
