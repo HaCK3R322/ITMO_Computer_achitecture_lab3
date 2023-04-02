@@ -50,91 +50,84 @@ class RAM:
 
 # Performs operations on its left and right inputs. Where to transfer output decides Control unit
 class ALU:
-    LEFT_IN = "left_in"
-    RIGHT_IN = "right_in"
 
     def __init__(self):
         self.overflow_flag = False
         self.zero_flag = False
         self.negative_flag = False
 
-        self.r_in = 0
-        self.l_in = 0
+    def INC(self, value):
+        return value + 1
 
-        self.out = 0
+    def DEC(self, value):
+        return value - 1
 
-    def set_R_in(self, value):
-        self.r_in = value
-
-    def set_L_in(self, value):
-        self.l_in = value
-
-    def INC(self):
-        self.out = self.r_in + 1
-
-    def DEC(self):
-        self.out = self.r_in - 1
-
-    def ADD(self):
-        if self.l_in + self.r_in > 0x7FFFFFFF:  # max value is 2147483647
-            self.out = -((self.r_in + 1) - (0x7FFFFFFF - self.l_in))
-            self.overflow_flag = True
+    def ADD(self, l_in, r_in):
+        if l_in + r_in > 0x7FFFFFFF:  # max value is 2147483647
             logging.warning("ALU ADD OPERATION: POSITIVE OVERFLOW")
-        elif self.l_in + self.r_in < -0x80000000:  # min value is -2147483648
-            self.out = -((self.r_in + 1) - (-0x80000000 - self.l_in))
             self.overflow_flag = True
+            out = -((r_in + 1) - (0x7FFFFFFF - l_in))
+        elif l_in + r_in < -0x80000000:  # min value is -2147483648
             logging.warning("ALU ADD OPERATION: NEGATIVE OVERFLOW")
-        else:
-            self.out = self.l_in + self.r_in
-            self.overflow_flag = False
-
-        self.negative_flag = self.out < 0
-        self.zero_flag = self.out == 0
-
-    def MUL(self):
-        if self.l_in * self.r_in > 0x7FFFFFFF:  # max value is 2147483647
-            self.out = -((self.r_in + 1) - (0x7FFFFFFF - self.l_in))
             self.overflow_flag = True
+            out = -((r_in + 1) - (-0x80000000 - l_in))
+        else:
+            self.overflow_flag = False
+            out = l_in + r_in
+
+        self.negative_flag = out < 0
+        self.zero_flag = out == 0
+
+        return out
+
+    def MUL(self, l_in, r_in):
+        if l_in * r_in > 0x7FFFFFFF:  # max value is 2147483647
             logging.warning("ALU MUL OPERATION: POSITIVE OVERFLOW")
-        elif self.l_in * self.r_in < -0x80000000:  # min value is -2147483648
-            self.out = -((self.r_in + 1) - (-0x80000000 - self.l_in))
+            out = -((r_in + 1) - (0x7FFFFFFF - l_in))
             self.overflow_flag = True
+        elif l_in * r_in < -0x80000000:  # min value is -2147483648
             logging.warning("ALU MUL OPERATION: NEGATIVE OVERFLOW")
+            self.overflow_flag = True
+            out = -((r_in + 1) - (-0x80000000 - l_in))
         else:
-            self.out = self.l_in * self.r_in
+            out = l_in * r_in
             self.overflow_flag = False
 
-        self.negative_flag = self.out < 0
-        self.zero_flag = self.out == 0
+        self.negative_flag = out < 0
+        self.zero_flag = out == 0
 
-    def DIV(self):
-        if self.r_in == 0:
+        return out
+
+    def DIV(self, l_in, r_in):
+        if r_in == 0:
             raise ZeroDivisionError
 
-        self.out = int(self.l_in / self.r_in)
+        out = int(l_in / r_in)
 
-        self.negative_flag = self.out < 0
-        self.zero_flag = self.out == 0
+        self.negative_flag = out < 0
+        self.zero_flag = out == 0
 
-    def SUB(self):
-        self.r_in = -self.r_in
-        self.ADD()
+        return out
 
-    def MOD(self):
-        self.out = self.l_in % self.r_in
+    def SUB(self, l_in, r_in):
+        r_in = -r_in
+        return self.ADD(l_in, r_in)
 
-        self.negative_flag = self.out < 0
-        self.zero_flag = self.out == 0
+    def MOD(self, l_in, r_in):
+        out = l_in % r_in
 
-    def transfer(self, from_in=None):
-        assert (from_in is not None) and (from_in == self.LEFT_IN or from_in == self.RIGHT_IN)
-        if from_in == self.LEFT_IN:
-            self.out = self.l_in
-        else:
-            self.out = self.r_in
+        self.negative_flag = out < 0
+        self.zero_flag = out == 0
 
-        self.negative_flag = self.out < 0
-        self.zero_flag = self.out == 0
+        return out
+
+    def transfer(self, l_in_or_r_in):
+        out = l_in_or_r_in
+
+        self.negative_flag = out < 0
+        self.zero_flag = out == 0
+
+        return out
 
 
 class ControlUnit:
@@ -205,121 +198,77 @@ class ControlUnit:
 
         if opcode == "PUSH":
             logging.info("----- PUSH -----")
-            # sp -> alu --(+1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.INC()
-            self.sp = self.alu.out
-            self.tick()
-
-            # decoder.address -> ad
+            # sp -> alu --(+1)--> sp; decoder.address -> ad
+            self.sp = self.alu.INC(self.sp)
             self.RAM.latch_address(instruction["address"])
             self.tick()
 
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
 
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
 
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "SET":
             logging.debug("----- SET -----")
             # sp -> alu --(-1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> ad
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.RAM.get()))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
             # sp -> alu --(-1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.sp = self.alu.out
+            self.sp = self.alu.DEC(self.sp)
             self.tick()
             # sp -> alu --(-1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.sp = self.alu.out
+            self.sp = self.alu.DEC(self.sp)
             self.tick()
 
         elif opcode == "GET":
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> ad
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.RAM.get()))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "CMP":  # doesn't affect on stack pointer and stack itself
             logging.debug("----- CMP -----")
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu --(-1) -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # data[ad] -> alu --(sub)--> acc
-            self.alu.set_L_in(self.acc)
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.SUB()
-            self.acc = self.alu.out
+            self.acc = self.alu.SUB(self.acc, self.RAM.get())
             self.tick()
             # after upper code ZF can be True if numbers equal and FALSE if not
 
@@ -353,210 +302,141 @@ class ControlUnit:
         elif opcode in {"ADD", "SUB", "MOD", "DIV", "MUL"}:
             logging.debug("----- ADD/SUB/MOD/DIV/MUL -----")
             # sp -> alu --(-1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
 
             # acc -------+ l_in
             #            |----> alu --(add/sub/mod/div/mul)--> acc
             # data[ad] --+ r_in
-            self.alu.set_L_in(self.acc)
-            self.alu.set_R_in(self.RAM.get())
 
             if opcode == "ADD":
-                self.alu.ADD()
+                self.acc = self.alu.ADD(self.acc, self.RAM.get())
             elif opcode == "SUB":
-                self.alu.SUB()
+                self.acc = self.alu.SUB(self.acc, self.RAM.get())
             elif opcode == "MOD":
-                self.alu.MOD()
+                self.acc = self.alu.MOD(self.acc, self.RAM.get())
             elif opcode == "MUL":
-                self.alu.MUL()
+                self.acc = self.alu.MUL(self.acc, self.RAM.get())
             elif opcode == "DIV":
-                self.alu.DIV()
+                self.acc = self.alu.DIV(self.acc, self.RAM.get())
 
-            self.acc = self.alu.out
             self.tick()
 
             # sp -> alu --(-1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.sp = self.alu.out
+            self.sp = self.alu.DEC(self.sp)
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "SWAP":
             logging.debug("----- SWAP -----")
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu --(+1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.INC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.INC(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
             # sp -> alu --(-1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
             # sp -> alu --(+1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.INC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.INC(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu --(-1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "DUP":
             logging.debug("----- DUP -----")
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu --(+1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.INC()
-            self.sp = self.alu.out
+            self.sp = self.alu.INC(self.sp)
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "DROP":
             logging.debug("----- DROP -----")
             # sp -> alu --(-1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.sp = self.alu.out
+            self.sp = self.alu.DEC(self.sp)
             self.tick()
 
         elif opcode == "OVER":
             logging.debug("----- OVER -----")
             # sp -> alu --(-1)--> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.DEC(self.sp))
             self.tick()
             # data[ad] -> alu -> acc
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.acc = self.alu.out
+            self.acc = self.alu.transfer(self.RAM.get())
             self.tick()
             # sp -> alu --(+1) --> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.INC()
-            self.sp = self.alu.out
+            self.sp = self.alu.INC(self.sp)
             self.tick()
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # acc -> alu -> data[ad]
-            self.alu.set_L_in(self.acc)
-            self.alu.transfer(from_in=ALU.LEFT_IN)
-            self.RAM.set(self.alu.out)
+            self.RAM.set(self.alu.transfer(self.acc))
             self.tick()
 
         elif opcode == "PRINT":
             logging.debug("----- PRINT -----")
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> out_buffer
             self.output_buffer.append(self.RAM.get())
             self.tick()
             # sp -> alu --(-1)--> sp
-            self.alu.set_R_in(self.sp)
-            self.alu.DEC()
-            self.sp = self.alu.out
+            self.sp = self.alu.DEC(self.sp)
             self.tick()
 
         elif opcode == "READ":
             # sp -> alu -> ad
-            self.alu.set_R_in(self.sp)
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> alu -> ad
-            self.alu.set_R_in(self.RAM.get())
-            self.alu.transfer(from_in=ALU.RIGHT_IN)
-            self.RAM.latch_address(self.alu.out)
+            self.RAM.latch_address(self.alu.transfer(self.RAM.get()))
             self.tick()
             # input_buffer -> data[ad]
             if len(self.input_buffer) < 1:
@@ -564,6 +444,7 @@ class ControlUnit:
 
             char = self.input_buffer.pop(0)
             self.RAM.set(char)
+            self.tick()
 
         elif opcode == "HLT":
             logging.debug("----- HLT -----")
