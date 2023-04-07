@@ -55,12 +55,14 @@ class Translator:
         self.data_FALSE = 0x801
         self.data_start = 0x802
 
-        self.vars = []
-
         self.instr = []
+
+        self.vars = []
+        self.functions = []
 
         self.if_stack = []
         self.loop_stack = []
+        self.func_stack = []
 
         self.scope = {"VARIABLE", "BEGIN", "UNTIL", "IF", "THEN",
                       "+", "-", "/", "*", "%", "<", ">", "=",
@@ -87,6 +89,20 @@ class Translator:
                 return var
 
         raise SyntaxError("No variable found with name " + name)
+
+    def is_function(self, token):
+        for func in self.functions:
+            if token == func['name']:
+                return True
+
+        return False
+
+    def get_function_by_name(self, name):
+        for func in self.functions:
+            if name == func['name']:
+                return func
+
+        raise SyntaxError(f"No function found with name \"{name}\"")
 
     def check_contructions(self):
         if_count = 0
@@ -192,6 +208,35 @@ class Translator:
         self.data_start += 1
         self.data.append(0)
         self.data_start += 1
+
+    def define_function(self, name):
+        if self.is_function(name):
+            raise SyntaxError(f"Function with name \"{name}\" already exists!")
+
+        if name.upper() in self.scope:
+            raise SyntaxError(f"Invalid function name \"{name}\"")
+
+        if name.lstrip('-+').isdigit():
+            raise SyntaxError(f"Function name cannot be numeric")
+
+        # okay i have two ways to define functions:
+        # 1 - fast work + allat of code - just inline function
+        # 2 - slower work + less code - make jmps
+        # keeping in mind that IM STUDENT AND ITS FAKE MODEL with no prediction unit (by now)
+
+        # im gonna just inline functions
+
+        self.functions.append({'name': name, 'instructions': []})
+        self.func_stack.append(0)
+
+    def translate_semicolon(self):
+        number_of_added_instructions = self.func_stack.pop()
+        instr_before_func = self.instr[:len(self.instr) - number_of_added_instructions]
+        instr_of_func = self.instr[len(self.instr) - number_of_added_instructions:len(self.instr)]
+
+        self.functions[-1]['instructions'] = instr_of_func
+        self.instr = instr_before_func
+
 
     def translate_digit(self, token_digit):
         if self.optimize:  # if optimize == True
@@ -341,6 +386,18 @@ class Translator:
 
                 self.instr.append(self.translate_to_instruction("PUSH", address=address))
 
+            elif token[0] == ':':
+                if len(token.split(':')) > 2:
+                    raise SyntaxError('Function name cannot contain \":\". Right syntax: <:><fnc_name><space><code...>')
+
+                self.define_function(token.split(':')[1])
+
+            elif token == ';':
+                self.translate_semicolon()
+
+            elif self.is_function(token):
+                self.instr += self.get_function_by_name(token)['instructions']
+
             # if token is some digit value
             elif token.lstrip('-+').isdigit():
                 token_digit = int(token)
@@ -360,6 +417,8 @@ class Translator:
                 raise SyntaxError(f'Unrecognizible token #{self.token_counter - 1}: \"{token}\"')
 
             number_of_added_instructions = len(self.instr) - instr_len_before
+
+            # WHY SO COMPLICATED XD? make easier
             if len(self.if_stack) > 0:
                 for if_addedd_instr_index in range(len(self.if_stack)):
                     self.if_stack[if_addedd_instr_index] += number_of_added_instructions
@@ -367,6 +426,10 @@ class Translator:
             if len(self.loop_stack) > 0:
                 for loop_addedd_instr_index in range(len(self.loop_stack)):
                     self.loop_stack[loop_addedd_instr_index] += number_of_added_instructions
+
+            if len(self.func_stack) > 0:
+                for func_added_instr_index in range(len(self.func_stack)):
+                    self.func_stack[func_added_instr_index] += number_of_added_instructions
 
             self.token_counter += 1
 

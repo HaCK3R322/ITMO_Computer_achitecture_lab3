@@ -170,6 +170,23 @@ class TestTranslator(unittest.TestCase):
         self.assertEqual(data_optimize_false, excpected_data_optimize_false)
         self.assertEqual(data_optimized_true, excpected_data_optimize_true)
 
+    def test_define_and_use_function(self):
+        code = ":func1 1 2 ; func1 func1"
+
+        translator = Translator(code, optimize=True)
+        instructions, data = translator.translate()
+
+        expected_instructions = [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
+                                 {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2},
+                                 {'opcode': 'PUSH', 'address': 2050, 'related_token_index': 1},
+                                 {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2},
+                                 {'opcode': 'HLT'}]
+
+        expected_data = [-1, 0, 1, 2]
+
+        self.assertEqual(expected_instructions, instructions)
+        self.assertEqual(expected_data, data)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
