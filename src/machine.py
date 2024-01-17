@@ -491,7 +491,7 @@ def main(program_file_path, input_file_path, output_file_path):
 
             output_buffer = []
 
-            simulation = Simpulation(program, input_buffer, output_buffer)
+            simulation = Simulation(program, input_buffer, output_buffer)
             simulation.simulate()
 
             characters = [chr(code) for code in output_buffer]
