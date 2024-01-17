@@ -451,7 +451,7 @@ class ControlUnit:
             raise HTLInterrupt("HTLInterrupt")
 
 
-class Simpulation:
+class Simulation:
     def __init__(self, program, input_buffer, output_buffer):
         self.instructions = program["instructions"]
         self.data = program["data"]
