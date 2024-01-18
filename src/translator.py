@@ -4,8 +4,8 @@ import sys
 
 # выходной файл разделен на две части:
 # 1:  .start
-# 2:      PUSH 0x800
-# 3:      PUSH 0x801
+# 2:     PUSH 0x800
+# 3:     PUSH 0x801
 # 4:     ADD
 # 5:     HLT
 # 6:  .data
@@ -104,7 +104,7 @@ class Translator:
 
         raise SyntaxError(f"No function found with name \"{name}\"")
 
-    def check_contructions(self):
+    def check_constructions(self):
         if_count = 0
         then_count = 0
         begin_count = 0
@@ -346,7 +346,7 @@ class Translator:
 
     def translate(self):
         # fast checking on syntax errors
-        self.check_contructions()
+        self.check_constructions()
 
         # some warnings
         try:

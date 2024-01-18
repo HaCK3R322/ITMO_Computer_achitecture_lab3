@@ -502,4 +502,4 @@ def main(program_file_path, input_file_path, output_file_path):
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
-    main(sys.argv[1:])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
