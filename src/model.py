@@ -86,8 +86,28 @@ class ControlUnit:
 
         self.ticks = 0
 
+    def print_state(self):
+        a = self.stack.sp - 3 if self.stack.sp - 3 > -1 else self.stack.sp - 3 + 0xFF
+        b = self.stack.sp - 2 if self.stack.sp - 2 > -1 else self.stack.sp - 2 + 0xFF
+        c = self.stack.sp - 1 if self.stack.sp - 1 > -1 else self.stack.sp - 1 + 0xFF
+        d = self.stack.sp
+
+        aa = f'0x{self.stack.data[a]:02X} ' if self.stack.data[a] != 0 else '     '
+        bb = f'0x{self.stack.data[b]:02X} ' if self.stack.data[b] != 0 else '     '
+        cc = f'0x{self.stack.data[c]:02X} ' if self.stack.data[c] != 0 else '     '
+        dd = f'0x{self.stack.data[d]:02X} ' if self.stack.data[d] != 0 else '     '
+
+        print(f'tick {self.ticks: >6}: STACK[-4:],TOS: |',
+              aa,
+              bb,
+              cc,
+              dd + ' ,',
+              f'0x{self.stack.tos:02X}',
+              '|')
+
     def tick(self):
         self.ticks += 1
+        self.print_state()
 
     def add(self):
         """
@@ -110,7 +130,6 @@ class ControlUnit:
         tos - stack[sp] => tos; sp--
         """
         self.stack.tos = self.stack.get_next() - self.stack.tos
-
         if self.stack.tos < 0:
             self.stack.tos += 0x100
 
@@ -210,27 +229,49 @@ class ControlUnit:
         self.tick()
 
     def over(self):
+        """
+        sp--\n
+        stack[sp] = TOS\n
+        sp--\n
+        TOS = stack[sp]\n
+        SP++\n
+        """
         self.stack.sp_inc()
+        self.tick()
         self.stack.data[self.stack.sp] = self.stack.tos
+        self.tick()
         self.stack.sp_dec()
+        self.tick()
         self.stack.tos = self.stack.data[self.stack.sp]
+        self.tick()
         self.stack.sp_inc()
+        self.tick()
 
     def drop(self):
         self.stack.tos = self.stack.data[self.stack.sp]
+        self.tick()
         self.stack.sp_dec()
+        self.tick()
 
     def swap(self):
         self.over()
         self.over()
         self.stack.sp_dec()
+        self.tick()
         self.stack.sp_dec()
+        self.tick()
         self.stack.write_tos_to_sp()
+        self.tick()
         self.stack.sp_inc()
+        self.tick()
         self.stack.sp_inc()
+        self.tick()
         self.stack.tos = self.stack.get_next()
+        self.tick()
         self.stack.sp_dec()
+        self.tick()
         self.stack.sp_dec()
+        self.tick()
 
     def inc(self):
         self.stack.tos += 1
@@ -255,75 +296,113 @@ class ControlUnit:
         self.stack.sp_inc()
         self.stack.write_tos_to_sp()
 
+    def hlt(self):
+        raise Exception("HLT was raised")
+
 
 
 if __name__ == '__main__':
     cu = ControlUnit()
 
-    cu.stack.push(0x0a)
-    cu.stack.push(0x0a)
-    cu.stack.push(0x0a)
-    cu.stack.push(0x0a)
-    cu.stack.push(0x0b)
+    cu.stack.push(0xaa)
+    cu.stack.push(0xff)
+    cu.stack.push(0xcc)
+    cu.stack.push(0xdd)
 
-    cu.swap()
+    cu.stack.push(0x11)
+    cu.stack.push(0xff)
+    cu.stack.push(0x33)
+    cu.stack.push(0xff)
 
-    cu.stack.print_stack()
+    cu.stack.sp = 0x0006
+
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+
+    cu.add()
+    cu.over()
+
+    if cu.of:
+        cu.stack.tos += 1
+
+        if cu.stack.tos != 0x00:
+            cu.of = False
+
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+
+    cu.add()
+
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
 
     cu.over()
-    cu.stack.print_stack()
 
-    cu.swap()
-    cu.stack.print_stack()
+    if cu.of:
+        cu.stack.tos += 1
 
-    # cu.stack.push(0xaa)
-    # cu.stack.push(0xff)
-    # cu.stack.push(0xcc)
-    # cu.stack.push(0xdd)
-    #
-    # cu.stack.push(0x11)
-    # cu.stack.push(0xff)
-    # cu.stack.push(0x33)
-    # cu.stack.push(0xff)
-    #
-    # cu.stack.sp = 0x0006
-    #
-    # cu.stack.sp -= 3
-    # cu.sum()
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp += 3
-    # cu.sum()
-    # cu.stack.sp -= 4
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp += 3
-    # cu.sum()
-    # cu.stack.sp -= 4
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp += 3
-    # cu.sum()
-    # cu.stack.sp -= 4
-    # cu.over()
-    # cu.stack.sp += 3
-    # cu.drop()
-    # cu.stack.print_stack()
+        if cu.stack.tos != 0x00:
+            cu.of = False
+
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+
+    cu.add()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.over()
+
+    if cu.of:
+        cu.stack.tos += 1
+
+        if cu.stack.tos != 0x00:
+            cu.of = False
+
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.add()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.stack.sp_dec()
+    cu.tick()
+    cu.over()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.stack.sp_inc()
+    cu.tick()
+    cu.drop()
+    cu.stack.print_stack()

@@ -23,12 +23,12 @@ class HTLInterrupt(Exception):
     pass
 
 
-# 12-bit addresses
-# 32-bit values
+# 16-bit addresses
+# 8-bit values
 class RAM:
     def __init__(self):
-        self.stack = [0] * 0xFFF
-        self.ad = 0x000
+        self.stack = [0] * 0xFFFF
+        self.ad = 0x0000
 
     def init_stack(self, data):
         data_start = 0x800
@@ -37,11 +37,11 @@ class RAM:
             data_start += 1
 
     def latch_address(self, address):
-        assert 0x000 <= address <= 0xFFF, f'RAM: address {hex(address)} out of bounds'
+        assert 0x0000 <= address <= 0xFFFF, f'RAM: address {hex(address)} out of bounds'
         self.ad = address
 
     def set(self, value):
-        assert -2147483648 <= value <= 2147483647, "Attempt to put in RAM value that out of bounds"
+        assert 0 <= value <= 255, "Attempt to put in RAM value that out of bounds"
         self.stack[self.ad] = value
 
     def get(self):
@@ -50,7 +50,6 @@ class RAM:
 
 # Performs operations on its left and right inputs. Where to transfer output decides Control unit
 class ALU:
-
     def __init__(self):
         self.overflow_flag = False
         self.zero_flag = False
@@ -140,9 +139,6 @@ class ControlUnit:
         self.pc = 0
         self.sp = -1
 
-        self.acc = 0
-        self.of = 0  # ovelfow-flag
-
         self.instructions = program
         self.address_vent_open = False
         self.decoder = {
@@ -156,17 +152,13 @@ class ControlUnit:
 
         self.alu = ALU()
 
-    def zero_flag(self):
-        return self.acc == 0
-
     def log_state(self):
         logging.debug(
-            "tick = %04d -> PC: 0x%03x | SP: 0x%03x | AC: %+06d | ALU flags: zf=%5r nf=%5r of=%5r | RAM addr:0x%03x ||| "
+            "tick = %04d -> PC: 0x%03x | SP: 0x%03x | ALU flags: zf=%5r nf=%5r of=%5r | RAM addr:0x%03x ||| "
             "related token index: %d",
             self._tick,
             self.pc,
             self.sp,
-            self.acc,
             self.alu.zero_flag, self.alu.negative_flag, self.alu.overflow_flag,
             self.RAM.ad,
             self.decoder["related_token_index"])
