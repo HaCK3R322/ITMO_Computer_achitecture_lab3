@@ -668,7 +668,6 @@ if __name__ == '__main__':
     try:
         simulation.simulate()
     except Exception as e:
-        simulation.cu.stack.print_stack()
         print(e)
 
 
