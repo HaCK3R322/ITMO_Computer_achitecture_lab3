@@ -1,0 +1,15 @@
+=
+IF
+ DUP
+  =
+  IF
+   DUP
+    =
+    IF
+     OVER
+      =
+      IF
+       DUP
+        DUP
+         DUP DUP DUP DUP DUP DUP DUP
+      THEN OVER THEN DUP THEN + THEN

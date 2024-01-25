@@ -1,4 +1,6 @@
-# up to 2^16 of 8-bit values
+import json
+
+
 class Stack:
     def __init__(self):
         self.data = [0] * 0x10000  # addresses from 0x0000 to 0xFFFF
@@ -132,10 +134,10 @@ class Decoder:
 
         self.__non_address_instructions_list = [
             "RET", "SWAP", "OVER", "DUP", "DROP", "ROT", "TOR", "RFROM", "SET", "GET", "SUM", "SUB", "DIV", "MUL",
-            "MOD", "INC", "DEC", "HLT"
+            "MOD", "INC", "DEC", "HLT", "TRUE", "FALSE", "CMP", "PRINT", "READ"
         ]
         self.__address_instructions_list = [
-            "LOAD", "SAVE", "JMP", "JZ", "JL", "JO", "CALL"
+            "LOAD", "JMPA", "JMPR", "JZ", "JL", "JO", "CALL"
         ]
 
     def __is_address_instruction(self):
@@ -162,6 +164,8 @@ class ControlUnit:
         self.rstack = Stack()
         self.ram = RAM()
         self.imem = InstructionsMemory()
+        self.input_buffer = []
+        self.output_buffer = []
 
         self.decoder = Decoder()
 
@@ -195,7 +199,8 @@ class ControlUnit:
               '|    ',
               f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}',
               f'     IMEM.ADDR: 0x{self.imem.address:04x}',
-              f'     PC: 0x{self.pc:04x}'
+              f'     PC: 0x{self.pc:04x}',
+              f'     rel_inst_index: {self.decoder.instruction["related_token_index"]} ({self.decoder.instruction["related_token"]})'
               )
 
     def tick(self):
@@ -251,6 +256,38 @@ class ControlUnit:
         self.stack.tos = self.stack.data[self.stack.sp]
         self.tick()
         self.stack.sp_inc()
+        self.tick()
+
+    def true(self):
+        self.stack.push(0b11111111)
+        self.tick()
+
+    def false(self):
+        self.stack.push(0)
+        self.tick()
+
+    def cmp(self):
+        a = self.stack.data[self.stack.sp]
+        b = self.stack.tos
+
+        sign_mask = 0b10000000
+
+        sign_a = a & sign_mask
+        sign_b = b & sign_mask
+
+        if a == b:
+            self.zf = 1
+        else:
+            self.zf = 0
+
+        if sign_a and not sign_b:
+            self.nf = 1  # Set Negative Flag if a is negative and b is positive
+        elif not sign_a and sign_b:
+            self.nf = 0  # Clear Negative Flag if a is positive and b is negative
+        else:
+            # Both numbers have the same sign, compare magnitudes
+            self.nf = 1 if a < b else 0
+
         self.tick()
 
     def swap(self):
@@ -455,30 +492,16 @@ class ControlUnit:
         """
 
         opcode_bit_map = {
-            "JMP": 0b010,
-            "JZ": 0b011,
-            "JL": 0b100,
-            "JO": 0b101,
-            "CALL": 0b110,
+            "LOAD": 0b000,
+            "CALL": 0b001,
+            "JMPA": 0b010,
         }
         opcode_bits = (opcode_bit_map[self.decoder.opcode] << 6) & 0x1C0
         offset_bits = (self.decoder.offset & 0x1F) << 1
 
         return opcode_bits | offset_bits
 
-    def __opcode_and_address_to_bits_load(self):
-        """
-        address structure:
-        address bits #15 to #7: 0\n
-        address bits  #6 to #1: OFFSET bits\n
-        address bit         #0: 0\n
-        :return: computed address
-        """
-        offset_bits = self.decoder.offset << 1
-
-        return offset_bits
-
-    def jmp(self):
+    def jmp_absolute(self):
         """
         - compute address from OPCODE and OFFSET -> IMEM.ADDRESS
         - IMEM[IMEM.ADDRESS] -> PC_High_bits
@@ -494,17 +517,24 @@ class ControlUnit:
         self.latch_pc_low_bits(self.imem.load()["value"])
         self.tick()
 
+    def jmp_relative(self):
+        """
+        PC + OFFSET -> PC
+        """
+        self.pc = self.pc + self.decoder.offset
+        self.tick()
+
     def jz(self):
         if self.zf:
-            self.jmp()
+            self.jmp_relative()
 
     def jl(self):
         if self.nf:
-            self.jmp()
+            self.jmp_relative()
 
     def jo(self):
         if self.of:
-            self.jmp()
+            self.jmp_relative()
 
     def call(self):
         """
@@ -522,7 +552,7 @@ class ControlUnit:
         self.rstack.push(pc_low_bits)
         self.tick()
 
-        self.jmp()
+        self.jmp_absolute()
 
     def ret(self):
         """
@@ -542,7 +572,7 @@ class ControlUnit:
         - IMEM[IMEM.ADDRESS] -> RAM_ADDRESS_Low_bits
         - SP++; TOS -> STACK[SP]; RAM[RAM_ADDRESS] -> TOS
         """
-        self.imem.latch_address(self.__opcode_and_address_to_bits_load())
+        self.imem.latch_address(self.__opcode_and_address_to_bits())
         self.tick()
         self.ram.latch_address_high_bits(self.imem.load()["value"])
         self.tick()
@@ -552,6 +582,15 @@ class ControlUnit:
         self.tick()
 
         self.stack.push(self.ram.load())
+        self.tick()
+
+    def print(self):
+        ascii_character = chr(self.stack.pop())
+        self.output_buffer.append(ascii_character)
+        self.tick()
+
+    def read(self):
+        self.stack.push(self.input_buffer.pop())
         self.tick()
 
     def hlt(self):
@@ -576,13 +615,19 @@ class ControlUnit:
             "SET": self.set,
             "GET": self.get,
             "LOAD": self.load,
-            "JMP": self.jmp,
+            "JMPA": self.jmp_absolute,
+            "JMPR": self.jmp_relative,
             "JZ": self.jz,
             "JL": self.jl,
             "JO": self.jo,
             "CALL": self.call,
             "RET": self.ret,
             "HLT": self.hlt,
+            "FALSE": self.false,
+            "TRUE": self.true,
+            "CMP": self.cmp,
+            "PRINT": self.print,
+            "READ": self.read
         }
 
         if opcode not in opcode_mapping:
@@ -597,51 +642,10 @@ class Simulation:
         print("-- init method of simulation --")
 
         self.cu = ControlUnit()
+        self.cu.input_buffer = [ord(char) for char in "Hello world!"]
+        self.cu.output_buffer = []
 
-        self.cu.stack.push(0x01)
-
-        self.cu.imem.data[0x0000] = {"value": 0x00, "related_token_index": 1}
-        self.cu.imem.data[0x0001] = {"value": 0x00, "related_token_index": 1}
-        self.cu.ram.data[0x0000] = 0xBB
-
-        self.cu.imem.data[0b1111110] = {"value": 0x00, "related_token_index": 1}
-        self.cu.imem.data[0b1111111] = {"value": 0x01, "related_token_index": 1}
-        self.cu.ram.data[0x0001] = 0xCC
-
-        # CALL
-        self.cu.imem.data[0x0180] = {"value": 0xAA, "related_token_index": 1}
-        self.cu.imem.data[0x0181] = {"value": 0xBA, "related_token_index": 1}
-
-        # jmp
-        self.cu.imem.data[0x0080] = {"value": 0x02, "related_token_index": 1}
-        self.cu.imem.data[0x0081] = {"value": 0x0e, "related_token_index": 1}
-
-        self.cu.imem.data[0x0200] = {"value": "JMP", "offset": 0b00000, "related_token_index": 0}
-        self.cu.imem.data[0x0201] = {"value": "DUP", "related_token_index": 1}
-        self.cu.imem.data[0x0202] = {"value": "DUP", "related_token_index": 1}
-        self.cu.imem.data[0x0203] = {"value": "SUM", "related_token_index": 1}
-        self.cu.imem.data[0x0204] = {"value": "SWAP", "related_token_index": 1}
-        self.cu.imem.data[0x0205] = {"value": "DUP", "related_token_index": 1}
-        self.cu.imem.data[0x0206] = {"value": "SUM", "related_token_index": 1}
-        self.cu.imem.data[0x0207] = {"value": "MUL", "related_token_index": 1}
-        self.cu.imem.data[0x0208] = {"value": "HLT", "related_token_index": -1}
-
-        self.cu.imem.data[0x0209] = {"value": "DUP", "related_token_index": -1}
-        self.cu.imem.data[0x020a] = {"value": "DUP", "related_token_index": -1}
-        self.cu.imem.data[0x020b] = {"value": "HLT", "related_token_index": -1}
-
-        self.cu.imem.data[0x020c] = {"value": "LOAD", "offset": 0b000000, "related_token_index": -1}
-        self.cu.imem.data[0x020d] = {"value": "LOAD", "offset": 0b111111, "related_token_index": -1}
-        self.cu.imem.data[0x020e] = {"value": "HLT", "related_token_index": -1}
-
-        self.cu.imem.data[0x020f] = {"value": "CALL", "offset": 0b00000, "related_token_index": -1}
-        self.cu.imem.data[0x0210] = {"value": "HLT", "related_token_index": -1}
-
-        self.cu.imem.data[0xAABB] = {"value": "DUP", "related_token_index": -1}
-        self.cu.imem.data[0xAABC] = {"value": "SUM", "related_token_index": -1}
-        self.cu.imem.data[0xAABD] = {"value": "RET", "related_token_index": -1}
-
-        self.cu.pc = 0x0200
+        self.cu.pc = 0x00C0
         self.cu.imem.address = 0x0000
 
     def instruction_fetch(self):
@@ -663,12 +667,39 @@ class Simulation:
 
 
 if __name__ == '__main__':
-    simulation = Simulation()
+    with open("outputcode.txt", encoding="utf-8") as program_file:
+        program = json.loads(program_file.read())
 
-    try:
-        simulation.simulate()
-    except Exception as e:
-        print(e)
+        simulation = Simulation()
+        simulation.cu.imem.init_data(program["instructions"])
+
+        for index, i in enumerate(simulation.cu.imem.data):
+            if i["value"] != 0:
+                print(index, i)
+
+        simulation.cu.stack.push(6)
+        simulation.cu.stack.push(5)
+        simulation.cu.stack.push(1)
+        simulation.cu.stack.push(2)
+        simulation.cu.stack.push(3)
+        simulation.cu.stack.push(4)
+        simulation.cu.stack.push(4)
+
+        # simulation.simulate()
+
+        try:
+            simulation.simulate()
+        except Exception as e:
+            print(e)
+            print()
+            print("Stack printed:")
+            simulation.cu.stack.print_stack()
+            print()
+            print("Output buffer: ", end="")
+            for character in simulation.cu.output_buffer:
+                print(character, end="")
+            print()
+
 
 
     # cu.stack.sp_dec()
