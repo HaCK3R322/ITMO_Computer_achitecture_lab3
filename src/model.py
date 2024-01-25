@@ -26,6 +26,10 @@ class Stack:
             self.sp = 0xFFFF
 
     def push(self, value):
+        """
+        sp++; tos->stack[sp]; value -> tos
+        :param value: to push on TOS
+        """
         self.sp_inc()
         self.data[self.sp] = self.tos
         assert -128 <= value <= 255, f'STACK: push filed with value {value}'
@@ -38,6 +42,9 @@ class Stack:
         return old_tos_value
 
     def write_tos_to_sp(self):
+        """
+        no stack pointer manipulation. Only tos -> stack[sp]
+        """
         self.data[self.sp] = self.tos
 
     def print_stack(self):
@@ -121,7 +128,7 @@ class Decoder:
     def __init__(self):
         self.instruction = None
         self.opcode = None
-        self.operand = None
+        self.offset = None
 
         self.__non_address_instructions_list = [
             "RET", "SWAP", "OVER", "DUP", "DROP", "ROT", "TOR", "RFROM", "SET", "GET", "SUM", "SUB", "DIV", "MUL",
@@ -136,10 +143,11 @@ class Decoder:
 
     def decode(self):
         if self.__is_address_instruction():
-            if not 0b00000 <= self.instruction["address"] <= 0b11111:
-                raise AssertionError(f'DECODER: operand of address instruction is out of bounds: {self.instruction["address"]}')
+            if not (0b00000 <= self.instruction["offset"] <= 0b111111 or
+                    0b000000 <= self.instruction["offset"] <= 0b111111 and self.instruction["opcode"] == "LOAD"):
+                raise AssertionError(f'DECODER: operand of address instruction is out of bounds: {self.instruction["offset"]}')
             self.opcode = self.instruction["value"]
-            self.operand = self.instruction["address"]
+            self.offset = self.instruction["offset"]
         else:
             if not self.instruction["value"] in self.__non_address_instructions_list:
                 raise AssertionError(f'DECODER: unknown OPCODE: {self.instruction["value"]}')
@@ -167,7 +175,7 @@ class ControlUnit:
         a = stack.sp - 3 if stack.sp - 3 > -1 else 999999
         b = stack.sp - 2 if stack.sp - 2 > -1 else 999999
         c = stack.sp - 1 if stack.sp - 1 > -1 else 999999
-        d = stack.sp if stack.sp - 1 > -1 else 999999
+        d = stack.sp if stack.sp > -1 else 999999
 
         aa = f'0x{stack.data[a]:02X}' if a != 999999 and stack.data[a] != 0 else '    '
         bb = f'0x{stack.data[b]:02X}' if b != 999999 and stack.data[b] != 0 else '    '
@@ -185,7 +193,9 @@ class ControlUnit:
               f'     RSTACK(sp=={self.rstack.sp: >5}): |',
               self.get_stack_str(self.rstack),
               '|    ',
-              f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}'
+              f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}',
+              f'     IMEM.ADDR: 0x{self.imem.address:04x}',
+              f'     PC: 0x{self.pc:04x}'
               )
 
     def tick(self):
@@ -434,12 +444,6 @@ class ControlUnit:
         self.stack.push(self.ram.load())
         self.tick()
 
-    def load(self):
-        print("Executing LOAD instruction")
-
-    def save(self):
-        print("Executing SAVE instruction")
-
     def __opcode_and_address_to_bits(self):
         """
         address structure:
@@ -451,8 +455,6 @@ class ControlUnit:
         """
 
         opcode_bit_map = {
-            "LOAD": 0b000,
-            "SAVE": 0b001,
             "JMP": 0b010,
             "JZ": 0b011,
             "JL": 0b100,
@@ -460,9 +462,21 @@ class ControlUnit:
             "CALL": 0b110,
         }
         opcode_bits = (opcode_bit_map[self.decoder.opcode] << 6) & 0x1C0
-        offset_bits = (self.decoder.operand & 0x1F) << 1
+        offset_bits = (self.decoder.offset & 0x1F) << 1
 
         return opcode_bits | offset_bits
+
+    def __opcode_and_address_to_bits_load(self):
+        """
+        address structure:
+        address bits #15 to #7: 0\n
+        address bits  #6 to #1: OFFSET bits\n
+        address bit         #0: 0\n
+        :return: computed address
+        """
+        offset_bits = self.decoder.offset << 1
+
+        return offset_bits
 
     def jmp(self):
         """
@@ -477,20 +491,68 @@ class ControlUnit:
         self.tick()
         self.imem.address_inc()
         self.tick()
-        self.latch_pc_high_bits(self.imem.load()["value"])
+        self.latch_pc_low_bits(self.imem.load()["value"])
         self.tick()
 
     def jz(self):
-        print("Executing JZ instruction")
+        if self.zf:
+            self.jmp()
 
     def jl(self):
-        print("Executing JL instruction")
+        if self.nf:
+            self.jmp()
 
     def jo(self):
-        print("Executing JO instruction")
+        if self.of:
+            self.jmp()
 
     def call(self):
-        print(f'{self.__opcode_and_address_to_bits():016b}')
+        """
+        - RSTACK.PUSH(PC_H)
+        - RSTACK.PUSH(PC_L)
+        - compute address from OPCODE and OFFSET -> IMEM.ADDRESS
+        - IMEM[IMEM.ADDRESS] -> PC_High_bits
+        - IMEM.ADDRESS inc
+        - IMEM[IMEM.ADDRESS] -> PC_Low_bits
+        """
+        pc_high_bits = (self.pc >> 8) & 0xFF
+        self.rstack.push(pc_high_bits)
+        self.tick()
+        pc_low_bits = self.pc & 0xFF
+        self.rstack.push(pc_low_bits)
+        self.tick()
+
+        self.jmp()
+
+    def ret(self):
+        """
+        - RSTACK.POP() *pc low bits* -> PC_Low_bits
+        - RSTACK.POP() *pc high bits* -> PC_High_bits
+        """
+        self.latch_pc_low_bits(self.rstack.pop())
+        self.tick()
+        self.latch_pc_high_bits(self.rstack.pop())
+        self.tick()
+
+    def load(self):
+        """
+        - compute address from OPCODE and OFFSET -> IMEM.ADDRESS
+        - IMEM[IMEM.ADDRESS] -> RAM_ADDRESS_High_bits
+        - IMEM.ADDRESS inc
+        - IMEM[IMEM.ADDRESS] -> RAM_ADDRESS_Low_bits
+        - SP++; TOS -> STACK[SP]; RAM[RAM_ADDRESS] -> TOS
+        """
+        self.imem.latch_address(self.__opcode_and_address_to_bits_load())
+        self.tick()
+        self.ram.latch_address_high_bits(self.imem.load()["value"])
+        self.tick()
+        self.imem.address_inc()
+        self.tick()
+        self.ram.latch_address_low_bits(self.imem.load()["value"])
+        self.tick()
+
+        self.stack.push(self.ram.load())
+        self.tick()
 
     def hlt(self):
         raise Exception("HLT was raised")
@@ -514,12 +576,12 @@ class ControlUnit:
             "SET": self.set,
             "GET": self.get,
             "LOAD": self.load,
-            "SAVE": self.save,
             "JMP": self.jmp,
             "JZ": self.jz,
             "JL": self.jl,
             "JO": self.jo,
             "CALL": self.call,
+            "RET": self.ret,
             "HLT": self.hlt,
         }
 
@@ -538,10 +600,23 @@ class Simulation:
 
         self.cu.stack.push(0x01)
 
-        self.cu.imem.data[0b11000000] = {"value": 0x02, "related_token_index": 1}
-        self.cu.imem.data[0b11000001] = {"value": 0x08, "related_token_index": 1}
+        self.cu.imem.data[0x0000] = {"value": 0x00, "related_token_index": 1}
+        self.cu.imem.data[0x0001] = {"value": 0x00, "related_token_index": 1}
+        self.cu.ram.data[0x0000] = 0xBB
 
-        self.cu.imem.data[0x0200] = {"value": "JMP", "address": 0b00000, "related_token_index": 0}
+        self.cu.imem.data[0b1111110] = {"value": 0x00, "related_token_index": 1}
+        self.cu.imem.data[0b1111111] = {"value": 0x01, "related_token_index": 1}
+        self.cu.ram.data[0x0001] = 0xCC
+
+        # CALL
+        self.cu.imem.data[0x0180] = {"value": 0xAA, "related_token_index": 1}
+        self.cu.imem.data[0x0181] = {"value": 0xBA, "related_token_index": 1}
+
+        # jmp
+        self.cu.imem.data[0x0080] = {"value": 0x02, "related_token_index": 1}
+        self.cu.imem.data[0x0081] = {"value": 0x0e, "related_token_index": 1}
+
+        self.cu.imem.data[0x0200] = {"value": "JMP", "offset": 0b00000, "related_token_index": 0}
         self.cu.imem.data[0x0201] = {"value": "DUP", "related_token_index": 1}
         self.cu.imem.data[0x0202] = {"value": "DUP", "related_token_index": 1}
         self.cu.imem.data[0x0203] = {"value": "SUM", "related_token_index": 1}
@@ -554,6 +629,17 @@ class Simulation:
         self.cu.imem.data[0x0209] = {"value": "DUP", "related_token_index": -1}
         self.cu.imem.data[0x020a] = {"value": "DUP", "related_token_index": -1}
         self.cu.imem.data[0x020b] = {"value": "HLT", "related_token_index": -1}
+
+        self.cu.imem.data[0x020c] = {"value": "LOAD", "offset": 0b000000, "related_token_index": -1}
+        self.cu.imem.data[0x020d] = {"value": "LOAD", "offset": 0b111111, "related_token_index": -1}
+        self.cu.imem.data[0x020e] = {"value": "HLT", "related_token_index": -1}
+
+        self.cu.imem.data[0x020f] = {"value": "CALL", "offset": 0b00000, "related_token_index": -1}
+        self.cu.imem.data[0x0210] = {"value": "HLT", "related_token_index": -1}
+
+        self.cu.imem.data[0xAABB] = {"value": "DUP", "related_token_index": -1}
+        self.cu.imem.data[0xAABC] = {"value": "SUM", "related_token_index": -1}
+        self.cu.imem.data[0xAABD] = {"value": "RET", "related_token_index": -1}
 
         self.cu.pc = 0x0200
         self.cu.imem.address = 0x0000
@@ -582,6 +668,7 @@ if __name__ == '__main__':
     try:
         simulation.simulate()
     except Exception as e:
+        simulation.cu.stack.print_stack()
         print(e)
 
 
