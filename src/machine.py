@@ -417,7 +417,7 @@ class ControlUnit:
             self.RAM.latch_address(self.alu.transfer(self.sp))
             self.tick()
             # data[ad] -> out_buffer
-            self.output_buffer.append(self.RAM.get())
+            self.output_buffer.add_instruction(self.RAM.get())
             self.tick()
             # sp -> alu --(-1)--> sp
             self.sp = self.alu.DEC(self.sp)

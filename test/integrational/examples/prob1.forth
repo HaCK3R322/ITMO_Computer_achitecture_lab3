@@ -12,7 +12,7 @@ BEGIN
         i @ sum @ + sum !
     THEN
 
-    i @ 999 =
+    i @ 127 =
 UNTIL
 
 
@@ -25,6 +25,30 @@ BEGIN
 
     sum @ 0 =
 UNTIL
+
+BEGIN
+    48 + .
+
+    i @ 1 - i !
+    i @ 0 =
+UNTIL
+
+
+
+
+
+
+FALSE FALSE FALSE i t!
+BEGIN
+    sum t@ FALSE FALSE 10 t%
+    sum t@ FALSE FALSE 10 t/
+    sum T!
+
+    i T@ FALSE FALSE 1 t+ i t!
+
+    sum t@ FALSE FALSE FALSE t=
+UNTIL
+
 
 BEGIN
     48 + .

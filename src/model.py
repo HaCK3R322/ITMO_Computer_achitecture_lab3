@@ -1,4 +1,5 @@
 import json
+import time
 
 
 class Stack:
@@ -53,7 +54,7 @@ class Stack:
         if self.sp < 0xFFFD:
             for address in range(self.sp + 1):
                 decimal_representation = self.data[address] if self.data[address] < 128 else self.data[address] - 256
-                print(f"0x{address:04X} | 0x{self.data[address]:02X}  ==  {decimal_representation}", end="")
+                print(f"0x{self.data[address]:02X}  ==  {decimal_representation}", end="")
                 if self.sp == address:
                     print(" <--")
                 else:
@@ -134,7 +135,7 @@ class Decoder:
 
         self.__non_address_instructions_list = [
             "RET", "SWAP", "OVER", "DUP", "DROP", "ROT", "TOR", "RFROM", "SET", "GET", "SUM", "SUB", "DIV", "MUL",
-            "MOD", "INC", "DEC", "HLT", "TRUE", "FALSE", "CMP", "PRINT", "READ"
+            "MOD", "INC", "DEC", "HLT", "TRUE", "FALSE", "CMP", "PRINT", "READ", "TMOD", "TDIV"
         ]
         self.__address_instructions_list = [
             "LOAD", "JMPA", "JMPR", "JZ", "JL", "JO", "CALL"
@@ -145,9 +146,6 @@ class Decoder:
 
     def decode(self):
         if self.__is_address_instruction():
-            if not (0b00000 <= self.instruction["offset"] <= 0b111111 or
-                    0b000000 <= self.instruction["offset"] <= 0b111111 and self.instruction["opcode"] == "LOAD"):
-                raise AssertionError(f'DECODER: operand of address instruction is out of bounds: {self.instruction["offset"]}')
             self.opcode = self.instruction["value"]
             self.offset = self.instruction["offset"]
         else:
@@ -190,7 +188,7 @@ class ControlUnit:
 
         return f'{aa} {bb} {cc} {dd} , {tos}'
 
-    def print_state(self):
+    def print_state(self, instruction_name):
         print(f'tick {self.ticks: >6}: STACK(sp=={self.stack.sp: >5}): |',
               self.get_stack_str(self.stack),
               '|',
@@ -200,12 +198,12 @@ class ControlUnit:
               f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}',
               f'     IMEM.ADDR: 0x{self.imem.address:04x}',
               f'     PC: 0x{self.pc:04x}',
-              f'     rel_inst_index: {self.decoder.instruction["related_token_index"]} ({self.decoder.instruction["related_token"]})'
+              f'     rel_inst_index: {self.decoder.instruction["related_token_index"]} ({self.decoder.instruction["related_token"]}, {instruction_name})'
               )
 
-    def tick(self):
+    def tick(self, instruction_name):
         self.ticks += 1
-        self.print_state()
+        # self.print_state(instruction_name)
 
     def latch_pc_low_bits(self, address_low_bits):
         assert 0x00 <= address_low_bits <= 0xFF, f'INSTRUCTION MEMORY: address low bits {hex(address_low_bits)} out of bounds'
@@ -221,23 +219,23 @@ class ControlUnit:
         rsp++; TOS -> RSTACK[rsp];sp--
         """
         self.rstack.push(self.stack.pop())
-        self.tick()
+        self.tick("TOR")
 
     def rfrom(self):
         """
         sp++; RSTACK[rsp] -> TOS; rsp--;
         """
         self.stack.push(self.rstack.pop())
-        self.tick()
+        self.tick("RFROM")
 
     def dup(self):
         self.stack.sp_inc()
         self.stack.write_tos_to_sp()
-        self.tick()
+        self.tick("DUP")
 
     def drop(self):
         self.stack.pop()
-        self.tick()
+        self.tick("DROP")
 
     def over(self):
         """
@@ -248,23 +246,23 @@ class ControlUnit:
         SP++\n
         """
         self.stack.sp_inc()
-        self.tick()
+        self.tick("OVER")
         self.stack.data[self.stack.sp] = self.stack.tos
-        self.tick()
+        self.tick("OVER")
         self.stack.sp_dec()
-        self.tick()
+        self.tick("OVER")
         self.stack.tos = self.stack.data[self.stack.sp]
-        self.tick()
+        self.tick("OVER")
         self.stack.sp_inc()
-        self.tick()
+        self.tick("OVER")
 
     def true(self):
         self.stack.push(0b11111111)
-        self.tick()
+        self.tick("TRUE")
 
     def false(self):
         self.stack.push(0)
-        self.tick()
+        self.tick("FALSE")
 
     def cmp(self):
         a = self.stack.data[self.stack.sp]
@@ -288,7 +286,7 @@ class ControlUnit:
             # Both numbers have the same sign, compare magnitudes
             self.nf = 1 if a < b else 0
 
-        self.tick()
+        self.tick("CMP")
 
     def swap(self):
         """
@@ -320,12 +318,14 @@ class ControlUnit:
     def inc(self):
         self.stack.tos += 1
         if self.stack.tos > 0xFF:
-            self.stack.tos -= 0x100
+            self.stack.tos = self.stack.tos & 0xFF
             self.of = True
+        else:
+            self.of = False
         self.zf = True if self.stack.tos == 0 else False
         self.nf = True if self.stack.tos >= 0x80 else False
 
-        self.tick()
+        self.tick("INC")
 
     def dec(self):
         self.stack.tos -= 1
@@ -334,7 +334,7 @@ class ControlUnit:
         self.zf = True if self.stack.tos == 0 else False
         self.nf = True if self.stack.tos >= 0x80 else False
 
-        self.tick()
+        self.tick("DEC")
 
     def sum(self):
         """
@@ -345,12 +345,14 @@ class ControlUnit:
         if self.stack.tos > 0xFF:
             self.stack.tos -= 0x100
             self.of = True
+        else:
+            self.of = False
         self.zf = True if self.stack.tos == 0 else False
         self.nf = True if self.stack.tos >= 0x80 else False
 
         self.stack.sp_dec()
 
-        self.tick()
+        self.tick("SUM")
 
     def sub(self):
         """
@@ -366,7 +368,7 @@ class ControlUnit:
 
         self.stack.sp_dec()
 
-        self.tick()
+        self.tick("SUB")
 
     def mul(self):
         """
@@ -395,7 +397,7 @@ class ControlUnit:
 
         self.stack.sp_dec()
 
-        self.tick()
+        self.tick("MUL")
 
     def divide(self):
         """
@@ -424,7 +426,7 @@ class ControlUnit:
 
         self.stack.sp_dec()
 
-        self.tick()
+        self.tick("DIV")
 
     def mod(self):
         """
@@ -453,7 +455,7 @@ class ControlUnit:
 
         self.stack.sp_dec()
 
-        self.tick()
+        self.tick("MOD")
 
     def set(self):
         """
@@ -462,11 +464,15 @@ class ControlUnit:
         TOS -> RAM[AD]; sp--;
         """
         self.ram.latch_address_low_bits(self.stack.pop())
-        self.tick()
+        self.tick("SET")
         self.ram.latch_address_high_bits(self.stack.pop())
-        self.tick()
+        self.tick("SET")
         self.ram.save(self.stack.pop())
-        self.tick()
+        self.tick("SET")
+
+        saved_value = self.ram.load()
+        decimal_representation = saved_value if saved_value < 128 else saved_value - 256
+        # print(f'           : RAM[{self.ram.ad:04x}] = {self.ram.load():02X} == ({decimal_representation})')
 
     def get(self):
         """
@@ -475,11 +481,11 @@ class ControlUnit:
         sp++; RAM[AD] -> TOS;
         """
         self.ram.latch_address_low_bits(self.stack.pop())
-        self.tick()
+        self.tick("GET")
         self.ram.latch_address_high_bits(self.stack.pop())
-        self.tick()
+        self.tick("GET")
         self.stack.push(self.ram.load())
-        self.tick()
+        self.tick("GET")
 
     def __opcode_and_address_to_bits(self):
         """
@@ -509,20 +515,20 @@ class ControlUnit:
         - IMEM[IMEM.ADDRESS] -> PC_Low_bits
         """
         self.imem.latch_address(self.__opcode_and_address_to_bits())
-        self.tick()
+        self.tick("JMPA")
         self.latch_pc_high_bits(self.imem.load()["value"])
-        self.tick()
+        self.tick("JMPA")
         self.imem.address_inc()
-        self.tick()
+        self.tick("JMPA")
         self.latch_pc_low_bits(self.imem.load()["value"])
-        self.tick()
+        self.tick("JMPA")
 
     def jmp_relative(self):
         """
         PC + OFFSET -> PC
         """
         self.pc = self.pc + self.decoder.offset
-        self.tick()
+        self.tick("JMPR")
 
     def jz(self):
         if self.zf:
@@ -535,6 +541,7 @@ class ControlUnit:
     def jo(self):
         if self.of:
             self.jmp_relative()
+        self.of = False
 
     def call(self):
         """
@@ -547,10 +554,10 @@ class ControlUnit:
         """
         pc_high_bits = (self.pc >> 8) & 0xFF
         self.rstack.push(pc_high_bits)
-        self.tick()
+        self.tick("CALL")
         pc_low_bits = self.pc & 0xFF
         self.rstack.push(pc_low_bits)
-        self.tick()
+        self.tick("CALL")
 
         self.jmp_absolute()
 
@@ -560,9 +567,9 @@ class ControlUnit:
         - RSTACK.POP() *pc high bits* -> PC_High_bits
         """
         self.latch_pc_low_bits(self.rstack.pop())
-        self.tick()
+        self.tick("RET")
         self.latch_pc_high_bits(self.rstack.pop())
-        self.tick()
+        self.tick("RET")
 
     def load(self):
         """
@@ -573,25 +580,83 @@ class ControlUnit:
         - SP++; TOS -> STACK[SP]; RAM[RAM_ADDRESS] -> TOS
         """
         self.imem.latch_address(self.__opcode_and_address_to_bits())
-        self.tick()
+        self.tick("LOAD")
         self.ram.latch_address_high_bits(self.imem.load()["value"])
-        self.tick()
+        self.tick("LOAD")
         self.imem.address_inc()
-        self.tick()
+        self.tick("LOAD")
         self.ram.latch_address_low_bits(self.imem.load()["value"])
-        self.tick()
+        self.tick("LOAD")
 
         self.stack.push(self.ram.load())
-        self.tick()
+        self.tick("LOAD")
 
     def print(self):
         ascii_character = chr(self.stack.pop())
         self.output_buffer.append(ascii_character)
-        self.tick()
+        self.tick("PRINT")
 
     def read(self):
         self.stack.push(self.input_buffer.pop())
-        self.tick()
+        self.tick("READ")
+
+    def tmod(self):
+        b3 = self.stack.pop()
+        self.tick("TMOD")
+        b2 = self.stack.pop() << 8
+        self.tick("TMOD")
+        b1 = self.stack.pop() << 16
+        self.tick("TMOD")
+        a3 = self.stack.pop()
+        self.tick("TMOD")
+        a2 = self.stack.pop() << 8
+        self.tick("TMOD")
+        a1 = self.stack.pop() << 16
+        self.tick("TMOD")
+
+        a = a1 + a2 + a3
+        b = b1 + b2 + b3
+
+
+
+        if b == 0:
+            raise ZeroDivisionError("TMOD div by zero error")
+        else:
+            c = a % b
+            self.stack.push(c >> 16)
+            self.tick("TMOD")
+            self.stack.push((c >> 8) & 0xFF)
+            self.tick("TMOD")
+            self.stack.push(c & 0xFF)
+            self.tick("TMOD")
+
+    def tdiv(self):
+        b3 = self.stack.pop()
+        self.tick("TDIV")
+        b2 = self.stack.pop()
+        self.tick("TDIV")
+        b1 = self.stack.pop()
+        self.tick("TDIV")
+        a3 = self.stack.pop()
+        self.tick("TDIV")
+        a2 = self.stack.pop()
+        self.tick("TDIV")
+        a1 = self.stack.pop()
+        self.tick("TDIV")
+
+        a = a1 | a2 | a3
+        b = b1 | b2 | b3
+
+        if b == 0:
+            raise ZeroDivisionError("QDIV div by zero error")
+        else:
+            c = int(a / b)
+            self.stack.push(c >> 16)
+            self.tick("TDIV")
+            self.stack.push(c >> 8)
+            self.tick("TDIV")
+            self.stack.push(c & 0xFF)
+            self.tick("TDIV")
 
     def hlt(self):
         raise Exception("HLT was raised")
@@ -627,7 +692,9 @@ class ControlUnit:
             "TRUE": self.true,
             "CMP": self.cmp,
             "PRINT": self.print,
-            "READ": self.read
+            "READ": self.read,
+            "TMOD": self.tmod,
+            "TDIV": self.tdiv
         }
 
         if opcode not in opcode_mapping:
@@ -639,8 +706,6 @@ class ControlUnit:
 
 class Simulation:
     def __init__(self):
-        print("-- init method of simulation --")
-
         self.cu = ControlUnit()
         self.cu.input_buffer = [ord(char) for char in "Hello world!"]
         self.cu.output_buffer = []
@@ -666,129 +731,47 @@ class Simulation:
             self.cu.pc += 1
 
 
-if __name__ == '__main__':
+def main():
     with open("outputcode.txt", encoding="utf-8") as program_file:
         program = json.loads(program_file.read())
 
         simulation = Simulation()
         simulation.cu.imem.init_data(program["instructions"])
+        simulation.cu.ram.data = program["data"]
 
-        for index, i in enumerate(simulation.cu.imem.data):
-            if i["value"] != 0:
-                print(index, i)
-
-        simulation.cu.stack.push(6)
-        simulation.cu.stack.push(5)
-        simulation.cu.stack.push(1)
-        simulation.cu.stack.push(2)
-        simulation.cu.stack.push(3)
-        simulation.cu.stack.push(4)
-        simulation.cu.stack.push(4)
+        # for index, i in enumerate(simulation.cu.imem.data):
+        #     if i["value"] != 0:
+        #         print(f'0x{index:04x}', i)
+        #
+        # for i in simulation.cu.ram.data:
+        #     if i != 0:
+        #         print(i)
 
         # simulation.simulate()
 
         try:
+            start_time = time.time()
+            print(f"=== Simulation start ===")
             simulation.simulate()
+
         except Exception as e:
             print(e)
             print()
+            print(f"=== Simulation end. Time elapsed: {time.time() - start_time:.6f}s ===")
+
             print("Stack printed:")
             simulation.cu.stack.print_stack()
             print()
-            print("Output buffer: ", end="")
-            for character in simulation.cu.output_buffer:
-                print(character, end="")
-            print()
+
+            print("RStack printed:")
+            simulation.cu.rstack.print_stack()
+            # print()
+            #
+            # print("Output buffer: ", end="")
+            # for character in simulation.cu.output_buffer:
+            #     print(character, end="")
+            # print()
 
 
-
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    #
-    # cu.add()
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    #
-    # cu.add()
-    #
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    #
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    #
-    # cu.add()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.over()
-    #
-    # if cu.of:
-    #     cu.stack.tos += 1
-    #
-    #     if cu.stack.tos != 0x00:
-    #         cu.of = False
-    #
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.add()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.stack.sp_dec()
-    # cu.tick()
-    # cu.over()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.stack.sp_inc()
-    # cu.tick()
-    # cu.drop()
-    # cu.stack.print_stack()
+if __name__ == '__main__':
+    main()
