@@ -823,7 +823,7 @@ class Translator:
 
     def is_reserved_word(self, word):
         operators = ['+', '-', '/', '*', '%', '>', '<', '=', 'SWAP', 'DUP', 'DROP', 'OVER', 'ROT', '!', '@', '.',
-                     'ACCEPT', ':function_name', ';', 'IF', 'THEN', 'BEGIN', 'UNTIL', 'VARIABLE']
+                     'READ', ':function_name', ';', 'IF', 'THEN', 'BEGIN', 'UNTIL', 'VARIABLE']
         return word in operators
 
     def int_to_eight_bit(self, value):
@@ -888,4 +888,4 @@ def main(source_path, output_path):
 
 
 if __name__ == '__main__':
-    main("inputcode.txt", "outputcode.txt")
+    main("source.forth", "program.lab")

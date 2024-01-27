@@ -595,6 +595,8 @@ class ControlUnit:
         self.tick("PRINT")
 
     def read(self):
+        if len(self.input_buffer) == 0:
+            raise BufferError("Trying to read void input buffer!")
         self.stack.push(self.input_buffer.pop())
         self.tick("READ")
 
@@ -703,7 +705,7 @@ class ControlUnit:
 class Simulation:
     def __init__(self):
         self.cu = ControlUnit()
-        self.cu.input_buffer = [ord(char) for char in "Hello world!"]
+        self.cu.input_buffer = []
         self.cu.output_buffer = []
 
         self.cu.pc = 0x00C0
@@ -727,72 +729,57 @@ class Simulation:
             self.cu.pc += 1
 
 
-def main():
+def main(program_filepath, input_filepath, output_filepath):
     if os.path.exists("model.log"):
         os.remove("model.log")
         print(f'The file {"model.log"} has been deleted.')
     else:
         print(f'The file {"model.log"} does not exist.')
-    logging.basicConfig(filename="model.log", level=logging.INFO, format='%(message)s')
+    logging.basicConfig(filename="model.log", level=logging.DEBUG, format='%(message)s')
 
-    with open("outputcode.txt", encoding="utf-8") as program_file:
-        program = json.loads(program_file.read())
+    with open(input_filepath, encoding="utf-8") as input_file:
+        with open(program_filepath, encoding="utf-8") as program_file:
+            program = json.loads(program_file.read())
 
-        simulation = Simulation()
-        simulation.cu.imem.init_data(program["instructions"])
-        simulation.cu.ram.data = program["data"]
+            simulation = Simulation()
+            simulation.cu.imem.init_data(program["instructions"])
+            simulation.cu.ram.data = program["data"]
 
-        # for index, i in enumerate(simulation.cu.imem.data):
-        #     if i["value"] != 0:
-        #         print(f'0x{index:04x}', i)
-        #
+            for character in input_file.read():
+                simulation.cu.input_buffer.append(ord(character))
+            simulation.cu.input_buffer.reverse()
+            simulation.cu.input_buffer.append(len(simulation.cu.input_buffer))
 
-        # try:
-        #     simulation.simulate()
-        # except ValueError as e:
-        #     print(e)
-        #     for i, instr in enumerate(simulation.cu.imem.data):
-        #         if instr["value"] != 0:
-        #             try:
-        #                 print(f'0x{i:04X} | {int(instr["value"]):02X}')
-        #             except ValueError:
-        #                 print(f'0x{i:04X} | {instr["value"]}')
-        #     print()
-        #     print(f'pc={simulation.cu.pc:04X}, imem[pc] = {simulation.cu.imem.data[simulation.cu.pc]}')
-        #     # print(f'pc={simulation.cu.pc:04X}, program[pc] = {program["instructions"][simulation.cu.pc]}')
+            try:
+                start_time = time.time()
+                print(f"=== Simulation start ===")
+                simulation.simulate()
+            except Exception as e:
+                print(e)
+                print(f"=== Simulation end. Time elapsed: {time.time() - start_time:.6f}s ===")
 
-        try:
-            start_time = time.time()
-            print(f"=== Simulation start ===")
-            simulation.simulate()
+                # print("Not void imem:")
+                # for i, instr in enumerate(simulation.cu.imem.data):
+                #     if instr["value"] != 0:
+                #         print(f'0x{i:04X} | {instr["value"]}')
+                # print()
+                # print("Not void ram:")
+                # for i, value in enumerate(simulation.cu.ram.data):
+                #     if value != 0:
+                #         print(f'0x{i:04X} | 0x{value:02X}')
+                # print()
+                # print("RStack printed:")
+                # simulation.cu.rstack.print_stack()
+                # print()
 
-        except Exception as e:
-            print(e)
-            print(f"=== Simulation end. Time elapsed: {time.time() - start_time:.6f}s ===")
+                print("Stack printed:")
+                simulation.cu.stack.print_stack()
+                print()
 
-            print("Not void imem:")
-            for i, instr in enumerate(simulation.cu.imem.data):
-                if instr["value"] != 0:
-                    print(f'0x{i:04X} | {instr["value"]}')
-            print()
-
-            print("Not void ram:")
-            for i, value in enumerate(simulation.cu.ram.data):
-                if value != 0:
-                    print(f'0x{i:04X} | 0x{value:02X}')
-            print()
-
-            print("RStack printed:")
-            simulation.cu.rstack.print_stack()
-            print()
-            print("Stack printed:")
-            simulation.cu.stack.print_stack()
-            print()
-
-            print("Output buffer: ", end="")
-            for character in simulation.cu.output_buffer:
-                print(character, end="")
-            print()
+                print("Output buffer: ", end="")
+                for character in simulation.cu.output_buffer:
+                    print(character, end="")
+                print()
 
 
 if __name__ == '__main__':
