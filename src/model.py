@@ -1,6 +1,9 @@
 import json
 import logging
+import shutil
+from logging.handlers import RotatingFileHandler
 import os
+import sys
 import time
 
 
@@ -56,15 +59,11 @@ class Stack:
         if self.sp < 0xFFFD:
             for address in range(self.sp + 1):
                 decimal_representation = self.data[address] if self.data[address] < 128 else self.data[address] - 256
-                print(f"0x{address:04X} | 0x{self.data[address]:02X}  ==  {decimal_representation}", end="")
-                if self.sp == address:
-                    print(" <--")
-                else:
-                    print()
-        print('-------------')
+                logging.log(logging.INFO,
+                            f"0x{address:04X} | 0x{self.data[address]:02X}  ==  {decimal_representation} {' <-- ' if self.sp == address else ''}")
+        logging.log(logging.INFO, '-------------')
         decimal_representation = self.tos if self.tos < 128 else self.tos - 256
-        print(f" TOS   | 0x{self.tos:02X}  ==  {decimal_representation}")
-        print()
+        logging.log(logging.INFO, f" TOS   | 0x{self.tos:02X}  ==  {decimal_representation}")
 
 
 class RAM:
@@ -100,7 +99,8 @@ class RAM:
 
 class InstructionsMemory:
     def __init__(self):
-        self.data = [{"value": 0x00, "related_token": "model imem init", "related_token_index": -1}] * 0x10000  # addresses from 0x0000 to 0xFFFF
+        self.data = [{"value": 0x00, "related_token": "model imem init",
+                      "related_token_index": -1}] * 0x10000  # addresses from 0x0000 to 0xFFFF
         self.address = 0x0000
 
     def init_data(self, data):
@@ -149,7 +149,8 @@ class Decoder:
             self.offset = self.instruction["offset"]
         else:
             if not self.instruction["value"] in self.__non_address_instructions_list:
-                raise ValueError(f'DECODER: unknown OPCODE: {self.instruction["value"]}, related token: {self.instruction["related_token"]}')
+                raise ValueError(
+                    f'DECODER: unknown OPCODE: {self.instruction["value"]}, related token: {self.instruction["related_token"]}')
             self.opcode = self.instruction["value"]
 
 
@@ -657,7 +658,7 @@ class ControlUnit:
             self.tick("TDIV")
 
     def hlt(self):
-        raise Exception("HLT was raised")
+        raise Exception(f"HLT was raised on tick {self.ticks}")
 
     def execute(self, opcode):
         opcode_mapping = {
@@ -729,13 +730,32 @@ class Simulation:
             self.cu.pc += 1
 
 
+def configure_logger():
+    # Set the logging level for the root logger
+    logging.basicConfig(level=logging.DEBUG, handlers=[])
+
+    log_folder = 'log'
+    if os.path.exists(log_folder):
+        shutil.rmtree(log_folder)
+    os.makedirs(log_folder)
+
+    # Set the maximum log file size
+    log_file_max_size = 50 * 1024 * 1024  # 50 MB
+
+    # Create a rotating file handler
+    file_handler = RotatingFileHandler(os.path.join(log_folder, 'log.log'), maxBytes=log_file_max_size, backupCount=999)
+    file_handler.setLevel(logging.DEBUG)
+
+    # Create a formatter and add it to the file handler
+    formatter = logging.Formatter('%(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Add the file handler to the root logger
+    logging.getLogger().addHandler(file_handler)
+
+
 def main(program_filepath, input_filepath, output_filepath):
-    if os.path.exists("model.log"):
-        os.remove("model.log")
-        print(f'The file {"model.log"} has been deleted.')
-    else:
-        print(f'The file {"model.log"} does not exist.')
-    logging.basicConfig(filename="model.log", level=logging.DEBUG, format='%(message)s')
+    configure_logger()
 
     with open(input_filepath, encoding="utf-8") as input_file:
         with open(program_filepath, encoding="utf-8") as program_file:
@@ -752,17 +772,18 @@ def main(program_filepath, input_filepath, output_filepath):
 
             try:
                 start_time = time.time()
-                print(f"=== Simulation start ===")
+                logging.log(logging.INFO, f"=== Simulation start ===")
                 simulation.simulate()
             except Exception as e:
-                print(e)
-                print(f"=== Simulation end. Time elapsed: {time.time() - start_time:.6f}s ===")
+                logging.log(logging.INFO, e)
+                logging.log(logging.INFO,
+                            f"=== Simulation end. Ticks: {simulation.cu.ticks}. Time elapsed: {time.time() - start_time:.6f}s ===")
 
-                # print("Not void imem:")
-                # for i, instr in enumerate(simulation.cu.imem.data):
-                #     if instr["value"] != 0:
-                #         print(f'0x{i:04X} | {instr["value"]}')
-                # print()
+                print("Not void imem:")
+                for i, instr in enumerate(simulation.cu.imem.data):
+                    if instr["value"] != 0:
+                        print(f'0x{i:04X} | {instr["value"]}')
+                print()
                 # print("Not void ram:")
                 # for i, value in enumerate(simulation.cu.ram.data):
                 #     if value != 0:
@@ -772,14 +793,13 @@ def main(program_filepath, input_filepath, output_filepath):
                 # simulation.cu.rstack.print_stack()
                 # print()
 
-                print("Stack printed:")
+                logging.log(logging.INFO, "\nStack printed:")
                 simulation.cu.stack.print_stack()
-                print()
 
-                print("Output buffer: ", end="")
-                for character in simulation.cu.output_buffer:
-                    print(character, end="")
-                print()
+                logging.log(logging.INFO, "\nOutput buffer: [")
+                for index, character in enumerate(simulation.cu.output_buffer):
+                    logging.log(logging.INFO, f"    {index}: {character}")
+                logging.log(logging.INFO, ']')
 
 
 if __name__ == '__main__':

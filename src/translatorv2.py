@@ -6,11 +6,12 @@ from typing import Tuple
 
 
 class AddressTable:
-    def __init__(self, size, start_address):
+    def __init__(self, size, start_address, name):
         self.data: List[int] = [0] * (size * 2)
         self.max_size: int = size
         self.reserved_count: int = 0
         self.start_address: int = start_address
+        self.name = name
 
     def reserve(self) -> int:
         assert self.reserved_count < self.max_size, f'CANT GET MORE TO ADDRESS TABLE OF {self.start_address:04X}'
@@ -19,7 +20,9 @@ class AddressTable:
         return reserved_offset
 
     def write_to_offset(self, offset, value):
+        print(f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2:04X}] = {(value >> 8) & 0xFF:02X}")
         self.data[offset * 2] = (value >> 8) & 0xFF
+        print(f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2 + 1:04X}] = {value& 0xFF:02X}")
         self.data[offset * 2 + 1] = value & 0xFF
 
     def print(self):
@@ -74,9 +77,9 @@ class Translator:
         self.current_token = None
         self.current_token_index = -1
 
-        self.load = AddressTable(32, 0x0000)
-        self.call = AddressTable(32, 0x0040)
-        self.jmp = AddressTable(32, 0x0080)
+        self.load = AddressTable(32, 0x0000, "LOAD table")
+        self.call = AddressTable(32, 0x0040, "CALL table")
+        self.jmp = AddressTable(32, 0x0080, "JMPA table")
 
         self.instructions: List[Instruction] = []
         self.instruction_counter = 0
@@ -211,7 +214,7 @@ class Translator:
                     self.process_until_for_regular(i, token)
                 else:
                     func = self.get_function_by_name(self.currently_defining_function_with_name)
-                    self.process_until_for_functions(func)
+                    self.preprocess_until_for_functions(func)
 
             elif self.is_integer(token):
                 token_digit: int = int(token)
@@ -334,7 +337,7 @@ class Translator:
         self.process_if_statements_for_regular()
 
         self.define_functions()
-        self.process_shift_functions_jmpa()
+        self.postprocess_shift_functions_jmpa()
         self.process_if_statements_for_functions()
 
         self.call.print()
@@ -483,7 +486,8 @@ class Translator:
 
                     instr.offset = reserved_offset
 
-    def process_until_for_regular(self, token_index, token):
+    def process_until_for_regular(self):
+        print("Processing UNTIL token outside of any function")
         number_of_added_instructions = self.instruction_counter - self.begin_last_label_stack.pop()
 
         shift = self.get_address_tables_size()
@@ -500,13 +504,15 @@ class Translator:
         self.append("JMPR", offset=1)
         self.append("JMPA", offset=reserved_offset_jmp)
 
-    def process_until_for_functions(self, func: Function):
+    def preprocess_until_for_functions(self, func: Function):
+        print(f"Pre-processing UNTIL token inside of function {func.name}: ", end="")
         number_of_added_instructions = func.instructions_counter - func.begin_last_label_stack.pop()
 
         address_to_jmp_relative = func.instructions_counter - number_of_added_instructions - 1
+        print(f"relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
 
-        reserved_offset_jmp = self.jmp.reserve()
-        self.jmp.write_to_offset(reserved_offset_jmp, address_to_jmp_relative)
+        reserved_offset = self.jmp.reserve()
+        self.jmp.write_to_offset(reserved_offset, address_to_jmp_relative)
 
         self.append("FALSE")
         self.append("CMP")
@@ -514,19 +520,22 @@ class Translator:
         self.append("DROP")
         self.append("JZ", offset=1)
         self.append("JMPR", offset=1)
-        self.append("JMPA", offset=reserved_offset_jmp)
+        self.append("JMPA", offset=reserved_offset)
 
         func.instructions_to_shift_jmpa.append(func.instructions[-1])
 
-    def process_shift_functions_jmpa(self):
+    def postprocess_shift_functions_jmpa(self):
         for func in self.functions:
+            print(f"Post-processing UNTIL token inside of function {func.name}: ",end="")
             for instr in func.instructions_to_shift_jmpa:
                 a = self.jmp.data[instr.offset] << 8
                 b = self.jmp.data[instr.offset + 1]
                 c = a | b
+                print(f'relative JMPA: {c} (0x{c:04X}). ', end="")
                 if c >= 0xFFFF:
                     c -= 0x10000
                 c += func.start_address
+                print(f'absolute JMPA: address = c + function start: {c - func.start_address} + {func.start_address} = {c} (0x{c:04X})')
                 self.jmp.write_to_offset(instr.offset, c)
 
     def define_functions(self):
@@ -537,7 +546,7 @@ class Translator:
 
             # add all instructions of function
             function_start = self.instruction_counter + self.get_address_tables_size()
-            print(f"XXX {self.instruction_counter} + {self.get_address_tables_size()} = {function_start} -> 0x{function_start - 1:02X}")
+            print(f"Function {func.name} assigned start: {function_start:04X} = {self.instruction_counter} + {self.get_address_tables_size()} -> 0x{function_start - 1:02X}")
             func.start_address = function_start
             for instruction in func.instructions:
                 self.instruction_counter += 1
