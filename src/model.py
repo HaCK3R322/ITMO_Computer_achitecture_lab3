@@ -15,7 +15,7 @@ class Stack:
 
     def get_next(self):
         # not exactly next, but returns value from stack by SP
-        assert self.sp != 0xFFFE and self.sp != 0xFFFF, f'STACK ERROR: trying to get forbidden address (sp = {self.sp})'
+        assert self.sp != 0xFFFE and self.sp != 0xFFFF, f'STACK ERROR: trying to get forbidden address (sp = {self.sp:04X})'
         return self.data[self.sp]
 
     def get_tos(self):
@@ -189,7 +189,7 @@ class ControlUnit:
         return f'{aa} {bb} {cc} {dd} , {tos}'
 
     def get_state_str(self, instruction_name):
-        return (f'tick {self.ticks: >6}: STACK(sp=={self.stack.sp: >5}): |' +
+        return (f'tick {self.ticks: >6}: STACK(sp==0x{self.stack.sp:04X}): |' +
                 self.get_stack_str(self.stack) +
                 '|' +
                 f'     RSTACK(sp=={self.rstack.sp: >5}): |' +
@@ -631,17 +631,11 @@ class ControlUnit:
 
     def tdiv(self):
         b3 = self.stack.pop()
-        self.tick("TDIV")
-        b2 = self.stack.pop()
-        self.tick("TDIV")
-        b1 = self.stack.pop()
-        self.tick("TDIV")
+        b2 = self.stack.pop() << 8
+        b1 = self.stack.pop() << 16
         a3 = self.stack.pop()
-        self.tick("TDIV")
-        a2 = self.stack.pop()
-        self.tick("TDIV")
-        a1 = self.stack.pop()
-        self.tick("TDIV")
+        a2 = self.stack.pop() << 8
+        a1 = self.stack.pop() << 16
 
         a = a1 | a2 | a3
         b = b1 | b2 | b3
@@ -651,10 +645,9 @@ class ControlUnit:
         else:
             c = int(a / b)
             self.stack.push(c >> 16)
-            self.tick("TDIV")
             self.stack.push(c >> 8)
-            self.tick("TDIV")
             self.stack.push(c & 0xFF)
+
             self.tick("TDIV")
 
     def hlt(self):
@@ -730,9 +723,9 @@ class Simulation:
             self.cu.pc += 1
 
 
-def configure_logger():
+def configure_logger(logging_level):
     # Set the logging level for the root logger
-    logging.basicConfig(level=logging.DEBUG, handlers=[])
+    logging.basicConfig(level=logging_level, handlers=[])
 
     log_folder = 'log'
     if os.path.exists(log_folder):
@@ -744,7 +737,7 @@ def configure_logger():
 
     # Create a rotating file handler
     file_handler = RotatingFileHandler(os.path.join(log_folder, 'log.log'), maxBytes=log_file_max_size, backupCount=999)
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging_level)
 
     # Create a formatter and add it to the file handler
     formatter = logging.Formatter('%(message)s')
@@ -755,7 +748,7 @@ def configure_logger():
 
 
 def main(program_filepath, input_filepath, output_filepath):
-    configure_logger()
+    configure_logger(logging.INFO)
 
     with open(input_filepath, encoding="utf-8") as input_file:
         with open(program_filepath, encoding="utf-8") as program_file:
@@ -769,6 +762,8 @@ def main(program_filepath, input_filepath, output_filepath):
                 simulation.cu.input_buffer.append(ord(character))
             simulation.cu.input_buffer.reverse()
             simulation.cu.input_buffer.append(len(simulation.cu.input_buffer))
+
+            # simulation.simulate()
 
             try:
                 start_time = time.time()

@@ -57,7 +57,7 @@ class Function:
         self.recursion_level: int = 0
         self.start_address: int = -1
         self.begin_last_label_stack: List[int] = [-1]
-        self.instructions_to_shift_jmpa: List[Instruction] = []
+        self.jmpa_instructions_and_reserved_offset_and_relative_shift: List[Tuple[Instruction, int, int]] = []
 
     def add_instruction(self, instruction):
         self.instructions.append(instruction)
@@ -511,8 +511,7 @@ class Translator:
         address_to_jmp_relative = func.instructions_counter - number_of_added_instructions - 1
         print(f"relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
 
-        reserved_offset = self.jmp.reserve()
-        self.jmp.write_to_offset(reserved_offset, address_to_jmp_relative)
+        reserved_jmp_offset = self.jmp.reserve()
 
         self.append("FALSE")
         self.append("CMP")
@@ -520,23 +519,22 @@ class Translator:
         self.append("DROP")
         self.append("JZ", offset=1)
         self.append("JMPR", offset=1)
-        self.append("JMPA", offset=reserved_offset)
+        self.append("JMPA", offset=reserved_jmp_offset)
 
-        func.instructions_to_shift_jmpa.append(func.instructions[-1])
+        func.jmpa_instructions_and_reserved_offset_and_relative_shift.append((func.instructions[-1], reserved_jmp_offset, address_to_jmp_relative))
 
     def postprocess_shift_functions_jmpa(self):
         for func in self.functions:
-            print(f"Post-processing UNTIL token inside of function {func.name}: ",end="")
-            for instr in func.instructions_to_shift_jmpa:
-                a = self.jmp.data[instr.offset] << 8
-                b = self.jmp.data[instr.offset + 1]
-                c = a | b
-                print(f'relative JMPA: {c} (0x{c:04X}). ', end="")
-                if c >= 0xFFFF:
-                    c -= 0x10000
-                c += func.start_address
-                print(f'absolute JMPA: address = c + function start: {c - func.start_address} + {func.start_address} = {c} (0x{c:04X})')
-                self.jmp.write_to_offset(instr.offset, c)
+            print(f"Post-processing UNTIL token inside of function {func.name}: ", end="")
+            for instr_and_shift in func.jmpa_instructions_and_reserved_offset_and_relative_shift:
+                jmpa_instruction = instr_and_shift[0]
+                address_to_jmp_relative = instr_and_shift[2]
+                new_jmpa_instruction_offset = func.start_address + address_to_jmp_relative
+
+                print(f'absolute JMPA: address = {new_jmpa_instruction_offset:04x}')
+
+                reserved_jmpa_offset = instr_and_shift[1]
+                self.jmp.write_to_offset(reserved_jmpa_offset, new_jmpa_instruction_offset)
 
     def define_functions(self):
         for func in self.functions:
