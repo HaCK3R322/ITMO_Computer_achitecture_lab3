@@ -177,6 +177,9 @@ class Translator:
                 if self.get_function_by_name(function_name) is not None:
                     raise NameError(f"function with name {function_name} already defined!")
 
+                if self.currently_defining_function_with_name is not None:
+                    raise SyntaxError(f"Cant define functions inside functions. Currently defining: {self.currently_defining_function_with_name}")
+
                 # TODO: check namings
                 self.reserve_function(function_name)
                 self.currently_defining_function_with_name = function_name
