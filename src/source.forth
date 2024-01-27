@@ -67,6 +67,6 @@
 ;
 
 :main
-    0 0 99 prob1
+    999 prob1
     print_unsigned_tnumber
 ; main
