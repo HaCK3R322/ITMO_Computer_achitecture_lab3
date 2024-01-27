@@ -1,4 +1,6 @@
 import json
+import logging
+import os
 import time
 
 
@@ -54,7 +56,7 @@ class Stack:
         if self.sp < 0xFFFD:
             for address in range(self.sp + 1):
                 decimal_representation = self.data[address] if self.data[address] < 128 else self.data[address] - 256
-                print(f"0x{self.data[address]:02X}  ==  {decimal_representation}", end="")
+                print(f"0x{address:04X} | 0x{self.data[address]:02X}  ==  {decimal_representation}", end="")
                 if self.sp == address:
                     print(" <--")
                 else:
@@ -98,7 +100,7 @@ class RAM:
 
 class InstructionsMemory:
     def __init__(self):
-        self.data = [{"value": 0x00, "related_token_index": -1}] * 0x10000  # addresses from 0x0000 to 0xFFFF
+        self.data = [{"value": 0x00, "related_token": "model imem init", "related_token_index": -1}] * 0x10000  # addresses from 0x0000 to 0xFFFF
         self.address = 0x0000
 
     def init_data(self, data):
@@ -141,16 +143,13 @@ class Decoder:
             "LOAD", "JMPA", "JMPR", "JZ", "JL", "JO", "CALL"
         ]
 
-    def __is_address_instruction(self):
-        return self.instruction["value"] in self.__address_instructions_list
-
     def decode(self):
-        if self.__is_address_instruction():
+        if self.instruction["value"] in self.__address_instructions_list:
             self.opcode = self.instruction["value"]
             self.offset = self.instruction["offset"]
         else:
             if not self.instruction["value"] in self.__non_address_instructions_list:
-                raise AssertionError(f'DECODER: unknown OPCODE: {self.instruction["value"]}')
+                raise ValueError(f'DECODER: unknown OPCODE: {self.instruction["value"]}, related token: {self.instruction["related_token"]}')
             self.opcode = self.instruction["value"]
 
 
@@ -184,26 +183,25 @@ class ControlUnit:
         cc = f'0x{stack.data[c]:02X}' if c != 999999 and stack.data[c] != 0 else '    '
         dd = f'0x{stack.data[d]:02X}' if d != 999999 and stack.data[d] != 0 else '    '
 
-        tos = f'0x{self.stack.tos:02X}' if stack.sp != 65534 else '    '
+        tos = f'0x{stack.tos:02X}' if stack.sp != 65534 else '    '
 
         return f'{aa} {bb} {cc} {dd} , {tos}'
 
-    def print_state(self, instruction_name):
-        print(f'tick {self.ticks: >6}: STACK(sp=={self.stack.sp: >5}): |',
-              self.get_stack_str(self.stack),
-              '|',
-              f'     RSTACK(sp=={self.rstack.sp: >5}): |',
-              self.get_stack_str(self.rstack),
-              '|    ',
-              f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}',
-              f'     IMEM.ADDR: 0x{self.imem.address:04x}',
-              f'     PC: 0x{self.pc:04x}',
-              f'     rel_inst_index: {self.decoder.instruction["related_token_index"]} ({self.decoder.instruction["related_token"]}, {instruction_name})'
-              )
+    def get_state_str(self, instruction_name):
+        return (f'tick {self.ticks: >6}: STACK(sp=={self.stack.sp: >5}): |' +
+                self.get_stack_str(self.stack) +
+                '|' +
+                f'     RSTACK(sp=={self.rstack.sp: >5}): |' +
+                self.get_stack_str(self.rstack) +
+                '|    ' +
+                f'ZF/NF/OF: {self.zf:1}/{self.nf:1}/{self.of:1}' +
+                f'     IMEM.ADDR: 0x{self.imem.address:04x}' +
+                f'     PC: 0x{self.pc:04x}' +
+                f'     rel_inst_index: {self.decoder.instruction["related_token_index"]} ({self.decoder.instruction["related_token"]}, {instruction_name})')
 
     def tick(self, instruction_name):
         self.ticks += 1
-        # self.print_state(instruction_name)
+        logging.log(logging.DEBUG, self.get_state_str(instruction_name))
 
     def latch_pc_low_bits(self, address_low_bits):
         assert 0x00 <= address_low_bits <= 0xFF, f'INSTRUCTION MEMORY: address low bits {hex(address_low_bits)} out of bounds'
@@ -617,8 +615,6 @@ class ControlUnit:
         a = a1 + a2 + a3
         b = b1 + b2 + b3
 
-
-
         if b == 0:
             raise ZeroDivisionError("TMOD div by zero error")
         else:
@@ -732,6 +728,13 @@ class Simulation:
 
 
 def main():
+    if os.path.exists("model.log"):
+        os.remove("model.log")
+        print(f'The file {"model.log"} has been deleted.')
+    else:
+        print(f'The file {"model.log"} does not exist.')
+    logging.basicConfig(filename="model.log", level=logging.INFO, format='%(message)s')
+
     with open("outputcode.txt", encoding="utf-8") as program_file:
         program = json.loads(program_file.read())
 
@@ -743,11 +746,20 @@ def main():
         #     if i["value"] != 0:
         #         print(f'0x{index:04x}', i)
         #
-        # for i in simulation.cu.ram.data:
-        #     if i != 0:
-        #         print(i)
 
-        # simulation.simulate()
+        # try:
+        #     simulation.simulate()
+        # except ValueError as e:
+        #     print(e)
+        #     for i, instr in enumerate(simulation.cu.imem.data):
+        #         if instr["value"] != 0:
+        #             try:
+        #                 print(f'0x{i:04X} | {int(instr["value"]):02X}')
+        #             except ValueError:
+        #                 print(f'0x{i:04X} | {instr["value"]}')
+        #     print()
+        #     print(f'pc={simulation.cu.pc:04X}, imem[pc] = {simulation.cu.imem.data[simulation.cu.pc]}')
+        #     # print(f'pc={simulation.cu.pc:04X}, program[pc] = {program["instructions"][simulation.cu.pc]}')
 
         try:
             start_time = time.time()
@@ -756,21 +768,31 @@ def main():
 
         except Exception as e:
             print(e)
-            print()
             print(f"=== Simulation end. Time elapsed: {time.time() - start_time:.6f}s ===")
 
-            print("Stack printed:")
-            simulation.cu.stack.print_stack()
+            print("Not void imem:")
+            for i, instr in enumerate(simulation.cu.imem.data):
+                if instr["value"] != 0:
+                    print(f'0x{i:04X} | {instr["value"]}')
+            print()
+
+            print("Not void ram:")
+            for i, value in enumerate(simulation.cu.ram.data):
+                if value != 0:
+                    print(f'0x{i:04X} | 0x{value:02X}')
             print()
 
             print("RStack printed:")
             simulation.cu.rstack.print_stack()
-            # print()
-            #
-            # print("Output buffer: ", end="")
-            # for character in simulation.cu.output_buffer:
-            #     print(character, end="")
-            # print()
+            print()
+            print("Stack printed:")
+            simulation.cu.stack.print_stack()
+            print()
+
+            print("Output buffer: ", end="")
+            for character in simulation.cu.output_buffer:
+                print(character, end="")
+            print()
 
 
 if __name__ == '__main__':

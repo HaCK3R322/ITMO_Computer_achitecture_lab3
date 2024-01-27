@@ -17,12 +17,6 @@ tvariable i
 BEGIN
     i t@ 0 0 1 t+ i t!
 
-    0x00 0x41 0xeb
-    sum t@ t=
-    if
-        sum t@
-    then
-
     i t@
     check_if_mod_3
     i t@
@@ -34,3 +28,5 @@ BEGIN
 
     i t@ 999 t=
 UNTIL
+
+sum t@
