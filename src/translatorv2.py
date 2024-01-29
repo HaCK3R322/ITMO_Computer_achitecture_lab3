@@ -211,7 +211,7 @@ class Translator:
                     func.begin_last_label_stack.append(func.instructions_counter)
             elif token == 'UNTIL':
                 if self.currently_defining_function_with_name is None:
-                    self.process_until_for_regular(i, token)
+                    self.process_until_for_regular()
                 else:
                     func = self.get_function_by_name(self.currently_defining_function_with_name)
                     self.preprocess_until_for_functions(func)
@@ -304,7 +304,13 @@ class Translator:
             elif len(self.variables) > 0 and self.variables[-1].name is None:
                 variable_name = token
                 if self.is_name_valid(variable_name):
+                    if self.currently_defining_function_with_name is not None:
+                        variable_name = self.currently_defining_function_with_name + "." + variable_name
+
+                    print(f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
                     self.variables[-1].name = variable_name
+                else:
+                    raise SyntaxError(f"Variable with name {variable_name} already defined!")
 
             elif self.get_variable_by_name(token) is not None:
                 variables_addresses_offset_index = 4
@@ -339,8 +345,6 @@ class Translator:
         self.define_functions()
         self.postprocess_shift_functions_jmpa()
         self.process_if_statements_for_functions()
-
-        self.call.print()
 
         self.merge_address_tables()
 
@@ -858,6 +862,9 @@ class Translator:
             return False
 
     def get_variable_by_name(self, variable_name):
+        if self.currently_defining_function_with_name is not None:
+            variable_name = self.currently_defining_function_with_name + "." + variable_name
+
         for var in self.variables:
             if var.name == variable_name:
                 return var

@@ -736,7 +736,8 @@ def configure_logger(logging_level):
     log_file_max_size = 50 * 1024 * 1024  # 50 MB
 
     # Create a rotating file handler
-    file_handler = RotatingFileHandler(os.path.join(log_folder, 'log.log'), maxBytes=log_file_max_size, backupCount=999)
+    file_handler = RotatingFileHandler(os.path.join(log_folder, 'model.log'), maxBytes=log_file_max_size,
+                                       backupCount=999)
     file_handler.setLevel(logging_level)
 
     # Create a formatter and add it to the file handler
@@ -747,8 +748,8 @@ def configure_logger(logging_level):
     logging.getLogger().addHandler(file_handler)
 
 
-def main(program_filepath, input_filepath, output_filepath):
-    configure_logger(logging.INFO)
+def main(program_filepath, input_filepath, logging_level):
+    configure_logger(logging_level)
 
     with open(input_filepath, encoding="utf-8") as input_file:
         with open(program_filepath, encoding="utf-8") as program_file:
@@ -758,35 +759,35 @@ def main(program_filepath, input_filepath, output_filepath):
             simulation.cu.imem.init_data(program["instructions"])
             simulation.cu.ram.data = program["data"]
 
-            for character in input_file.read():
+            input_file_string = input_file.read()
+            for character in input_file_string:
                 simulation.cu.input_buffer.append(ord(character))
             simulation.cu.input_buffer.reverse()
             simulation.cu.input_buffer.append(len(simulation.cu.input_buffer))
 
-            # simulation.simulate()
-
             try:
+                logging.log(logging.INFO, f'Original input: "{input_file_string}"')
+                logging.info("Reversed input buffer:")
+                for index, character in enumerate(simulation.cu.input_buffer):
+                    logging.log(logging.INFO, f"    {index}: {character}")
+                logging.log(logging.INFO, ']')
+
+                logging.info("\nNot void imem:")
+                for i, instr in enumerate(simulation.cu.imem.data):
+                    if instr["value"] != 0:
+                        try:
+                            int(instr["value"])
+                            logging.info(f'0x{i:04X} | 0x{instr["value"]:04X}')
+                        except ValueError:
+                            logging.info(f'0x{i:04X} | {instr["value"]}')
+
                 start_time = time.time()
-                logging.log(logging.INFO, f"=== Simulation start ===")
+                logging.log(logging.INFO, f"\n=== Simulation start ===")
                 simulation.simulate()
             except Exception as e:
                 logging.log(logging.INFO, e)
                 logging.log(logging.INFO,
                             f"=== Simulation end. Ticks: {simulation.cu.ticks}. Time elapsed: {time.time() - start_time:.6f}s ===")
-
-                print("Not void imem:")
-                for i, instr in enumerate(simulation.cu.imem.data):
-                    if instr["value"] != 0:
-                        print(f'0x{i:04X} | {instr["value"]}')
-                print()
-                # print("Not void ram:")
-                # for i, value in enumerate(simulation.cu.ram.data):
-                #     if value != 0:
-                #         print(f'0x{i:04X} | 0x{value:02X}')
-                # print()
-                # print("RStack printed:")
-                # simulation.cu.rstack.print_stack()
-                # print()
 
                 logging.log(logging.INFO, "\nStack printed:")
                 simulation.cu.stack.print_stack()
@@ -795,7 +796,14 @@ def main(program_filepath, input_filepath, output_filepath):
                 for index, character in enumerate(simulation.cu.output_buffer):
                     logging.log(logging.INFO, f"    {index}: {character}")
                 logging.log(logging.INFO, ']')
+                logging.log(logging.INFO, f'Output buffer jointed: "{''.join(simulation.cu.output_buffer)}"')
 
 
 if __name__ == '__main__':
-    main()
+    source_code_path_arg = sys.argv[1]
+    input_filepath_arg = sys.argv[2]
+    logging_level_arg = sys.argv[3]
+
+    model_debug_leve = logging.debug if logging_level_arg != "info" else logging.INFO
+
+    main(source_code_path_arg, input_filepath_arg, model_debug_leve)
