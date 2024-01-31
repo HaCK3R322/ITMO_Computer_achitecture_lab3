@@ -2,9 +2,6 @@ import unittest
 from src import Translator
 
 
-# По усти главная функция транлсятора "translate()" просто выбирает какую функцию трансляции использовать для токена,
-# все эти тесты тестируют отдельные участки кода и в праве называться unit-тестами
-
 class TestTranslator(unittest.TestCase):
     def setUp(self):
         print(self._testMethodDoc)

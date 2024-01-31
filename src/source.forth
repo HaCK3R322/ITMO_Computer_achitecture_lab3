@@ -1,6 +1,3 @@
-variable a 0xaa a !
-
-:func1 variable a 0xbb a ! a @ ; func1
-:func2 variable a 0xcc a ! a @ ; func2
-
-a @
+VARIABLE var 15 var !
+:func VARIABLE var 42 var ! ;
+var @

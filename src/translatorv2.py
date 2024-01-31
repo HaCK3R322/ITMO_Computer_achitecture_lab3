@@ -1,6 +1,9 @@
 import json
 import logging
+import os
 import re
+import shutil
+from logging.handlers import RotatingFileHandler
 from typing import List
 from typing import Tuple
 
@@ -20,16 +23,18 @@ class AddressTable:
         return reserved_offset
 
     def write_to_offset(self, offset, value):
-        print(f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2:04X}] = {(value >> 8) & 0xFF:02X}")
+        logging.info(
+            f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2:04X}] = {(value >> 8) & 0xFF:02X}")
         self.data[offset * 2] = (value >> 8) & 0xFF
-        print(f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2 + 1:04X}] = {value& 0xFF:02X}")
+        logging.info(
+            f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2 + 1:04X}] = {value & 0xFF:02X}")
         self.data[offset * 2 + 1] = value & 0xFF
 
     def print(self):
-        print('----------------')
+        logging.info('----------------')
         for index, value in enumerate(self.data):
-            print(f'| 0x{index:04X} | {self.data[index]:02x} |')
-        print('----------------')
+            logging.info(f'| 0x{index:04X} | {self.data[index]:02x} |')
+        logging.info('----------------')
 
     def get_as_instructions_data(self):
         instructions_data = []
@@ -109,7 +114,7 @@ class Translator:
     def translate(self):
         self.drop_out_comments_from_source_code()
         tokens: List[str] = self.tokenize()
-        print(f"tokenized: {tokens}")
+        logging.info(f"tokenized: {tokens}")
 
         for i, token in enumerate(tokens):
             if token[0] != '"':
@@ -181,7 +186,8 @@ class Translator:
                     raise NameError(f"function with name {function_name} already defined!")
 
                 if self.currently_defining_function_with_name is not None:
-                    raise SyntaxError(f"Cant define functions inside functions. Currently defining: {self.currently_defining_function_with_name}")
+                    raise SyntaxError(
+                        f"Cant define functions inside functions. Currently defining: {self.currently_defining_function_with_name}")
 
                 # TODO: check namings
                 self.reserve_function(function_name)
@@ -232,7 +238,7 @@ class Translator:
                         self.push_constant_on_top(token_digit)
 
                     elif -8388608 <= token_digit <= 8388607:
-                        print(
+                        logging.info(
                             f'WARNING: casting token {token} to TRIPLE-LENGTH INT, it will take 3 top-stack values and uses 3 LOAD cells')
                         if token_digit < 0:
                             token_digit += 0x1000000
@@ -307,7 +313,8 @@ class Translator:
                     if self.currently_defining_function_with_name is not None:
                         variable_name = self.currently_defining_function_with_name + "." + variable_name
 
-                    print(f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
+                    logging.info(
+                        f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
                     self.variables[-1].name = variable_name
                 else:
                     raise SyntaxError(f"Variable with name {variable_name} already defined!")
@@ -413,11 +420,12 @@ class Translator:
 
     def add_instruction(self, instruction):
         if self.currently_defining_function_with_name is None:
-            print(f"Appending instruction {instruction.value}")
+            logging.info(f"Appending instruction {instruction.value}")
             self.instructions.append(instruction)
             self.instruction_counter += 1
         else:
-            print(f"Appending instruction {instruction.value} (function {self.currently_defining_function_with_name})")
+            logging.info(
+                f"Appending instruction {instruction.value} (function {self.currently_defining_function_with_name})")
             function = self.get_function_by_name(self.currently_defining_function_with_name)
             function.add_instruction(instruction)
 
@@ -509,11 +517,11 @@ class Translator:
         self.append("JMPA", offset=reserved_offset_jmp)
 
     def preprocess_until_for_functions(self, func: Function):
-        print(f"Pre-processing UNTIL token inside of function {func.name}: ", end="")
+        logging.info(f"Pre-processing UNTIL token inside of function {func.name}: ")
         number_of_added_instructions = func.instructions_counter - func.begin_last_label_stack.pop()
 
         address_to_jmp_relative = func.instructions_counter - number_of_added_instructions - 1
-        print(f"relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
+        logging.info(f"     relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
 
         reserved_jmp_offset = self.jmp.reserve()
 
@@ -525,17 +533,18 @@ class Translator:
         self.append("JMPR", offset=1)
         self.append("JMPA", offset=reserved_jmp_offset)
 
-        func.jmpa_instructions_and_reserved_offset_and_relative_shift.append((func.instructions[-1], reserved_jmp_offset, address_to_jmp_relative))
+        func.jmpa_instructions_and_reserved_offset_and_relative_shift.append(
+            (func.instructions[-1], reserved_jmp_offset, address_to_jmp_relative))
 
     def postprocess_shift_functions_jmpa(self):
         for func in self.functions:
-            print(f"Post-processing UNTIL token inside of function {func.name}: ", end="")
+            logging.info(f"Post-processing UNTIL token inside of function {func.name}: ")
             for instr_and_shift in func.jmpa_instructions_and_reserved_offset_and_relative_shift:
                 jmpa_instruction = instr_and_shift[0]
                 address_to_jmp_relative = instr_and_shift[2]
                 new_jmpa_instruction_offset = func.start_address + address_to_jmp_relative
 
-                print(f'absolute JMPA: address = {new_jmpa_instruction_offset:04x}')
+                logging.info(f'    absolute JMPA: address = {new_jmpa_instruction_offset:04x}')
 
                 reserved_jmpa_offset = instr_and_shift[1]
                 self.jmp.write_to_offset(reserved_jmpa_offset, new_jmpa_instruction_offset)
@@ -543,12 +552,13 @@ class Translator:
     def define_functions(self):
         for func in self.functions:
             # add to each function RET
-            print(f"Appending instruction RET (function {func.name})")
+            logging.info(f"Appending instruction RET (function {func.name})")
             func.add_instruction(Instruction("RET", -1))
 
             # add all instructions of function
             function_start = self.instruction_counter + self.get_address_tables_size()
-            print(f"Function {func.name} assigned start: {function_start:04X} = {self.instruction_counter} + {self.get_address_tables_size()} -> 0x{function_start - 1:02X}")
+            logging.info(
+                f"Function {func.name} assigned start: {function_start:04X} = {self.instruction_counter} + {self.get_address_tables_size()} -> 0x{function_start - 1:02X}")
             func.start_address = function_start
             for instruction in func.instructions:
                 self.instruction_counter += 1
@@ -783,7 +793,7 @@ class Translator:
             raise ValueError(f"Unsigned constant {constant} out of bounds [0; 255]!")
 
         self.data[self.CONSTANTS_START_ADDRESS] = constant
-        print(f'self.data[{self.CONSTANTS_START_ADDRESS:04X}] = {constant:02X}')
+        logging.info(f'self.data[{self.CONSTANTS_START_ADDRESS:04X}] = {constant:02X}')
         self.append("LOAD", offset=0)
         self.append("LOAD", offset=1)
 
@@ -806,9 +816,9 @@ class Translator:
         self.data[self.TCONSTANTS_START_ADDRESS] = constant_high
         self.data[self.TCONSTANTS_START_ADDRESS + 1] = constant_mid
         self.data[self.TCONSTANTS_START_ADDRESS + 2] = constant_low
-        print(f'self.data[{self.TCONSTANTS_START_ADDRESS:04X}] = {constant_high:02X}')
-        print(f'self.data[{self.TCONSTANTS_START_ADDRESS + 1:04X}] = {constant_mid:02X}')
-        print(f'self.data[{self.TCONSTANTS_START_ADDRESS + 2:04X}] = {constant_low:02X}')
+        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS:04X}] = {constant_high:02X}')
+        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 1:04X}] = {constant_mid:02X}')
+        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 2:04X}] = {constant_low:02X}')
         self.append("LOAD", offset=2)
         self.append("LOAD", offset=3)
 
@@ -885,20 +895,47 @@ class Translator:
         return True
 
 
+def configure_logger(logging_level):
+    # Set the logging level for the root logger
+    logging.basicConfig(level=logging_level, handlers=[])
+
+    log_folder = 'log/translator'
+    if os.path.exists(log_folder):
+        shutil.rmtree(log_folder)
+    os.makedirs(log_folder)
+
+    # Set the maximum log file size
+    log_file_max_size = 50 * 1024 * 1024  # 50 MB
+
+    # Create a rotating file handler
+    file_handler = RotatingFileHandler(os.path.join(log_folder, 'translator.log'), maxBytes=log_file_max_size,
+                                       backupCount=999)
+    file_handler.setLevel(logging_level)
+
+    # Create a formatter and add it to the file handler
+    formatter = logging.Formatter('%(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Add the file handler to the root logger
+    logging.getLogger().addHandler(file_handler)
+
+
 def main(source_path, output_path):
+    configure_logger(logging_level=logging.INFO)
+
     with open(source_path, "r", encoding="utf-8") as source_file:
         source_code = source_file.read()
 
-        print("SOURCE CODE:")
-        print(source_code)
+        logging.info("SOURCE CODE:")
+        logging.info(source_code)
 
-        print("\n===== translation start =====")
+        logging.info("\n===== translation start =====")
         translator = Translator(source_code)
         instructions, data = translator.translate()
-        print("===== translation end =====\n")
+        logging.info("===== translation end =====\n")
+        logging.info(f"Total number of translated instructions: {len(translator.instructions) - 0x00C0}")
 
         program = {"instructions": translator.convert_instructions_to_list(), "data": data}
-        print("\nTranslated code:")
 
         with open(output_path, "w", encoding="utf-8") as bin_file:
             bin_file.write(json.dumps(program, indent=4))

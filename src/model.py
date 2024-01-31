@@ -49,11 +49,19 @@ class Stack:
         self.sp_dec()
         return old_tos_value
 
-    def write_tos_to_sp(self):
+    def write_tos_to_next(self):
         """
         no stack pointer manipulation. Only tos -> stack[sp]
         """
         self.data[self.sp] = self.tos
+
+    def write_next_to_tos(self):
+        self.tos = self.data[self.sp]
+
+    def swap(self):
+        temp = self.tos
+        self.tos = self.data[self.sp]
+        self.data[self.sp] = temp
 
     def print_stack(self):
         if self.sp < 0xFFFD:
@@ -229,7 +237,7 @@ class ControlUnit:
 
     def dup(self):
         self.stack.sp_inc()
-        self.stack.write_tos_to_sp()
+        self.stack.write_tos_to_next()
         self.tick("DUP")
 
     def drop(self):
@@ -246,11 +254,11 @@ class ControlUnit:
         """
         self.stack.sp_inc()
         self.tick("OVER")
-        self.stack.data[self.stack.sp] = self.stack.tos
+        self.stack.write_tos_to_next()
         self.tick("OVER")
         self.stack.sp_dec()
         self.tick("OVER")
-        self.stack.tos = self.stack.data[self.stack.sp]
+        self.stack.write_next_to_tos()
         self.tick("OVER")
         self.stack.sp_inc()
         self.tick("OVER")
@@ -289,18 +297,10 @@ class ControlUnit:
 
     def swap(self):
         """
-        OVER();\n
-        >r;\n
-        >r;\n
-        DROP();\n
-        r>;\nr>\n
+        stack swap
         """
-        self.over()
-        self.tor()
-        self.tor()
-        self.drop()
-        self.rfrom()
-        self.rfrom()
+        self.stack.swap()
+        self.tick("SWAP")
 
     def rot(self):
         """
@@ -469,8 +469,8 @@ class ControlUnit:
         self.ram.save(self.stack.pop())
         self.tick("SET")
 
-        saved_value = self.ram.load()
-        decimal_representation = saved_value if saved_value < 128 else saved_value - 256
+        # saved_value = self.ram.load()
+        # decimal_representation = saved_value if saved_value < 128 else saved_value - 256
         # print(f'           : RAM[{self.ram.ad:04x}] = {self.ram.load():02X} == ({decimal_representation})')
 
     def get(self):
@@ -513,6 +513,7 @@ class ControlUnit:
         - IMEM.ADDRESS inc
         - IMEM[IMEM.ADDRESS] -> PC_Low_bits
         """
+        self.imem.latch_address(self.__opcode_and_address_to_bits())
         self.imem.latch_address(self.__opcode_and_address_to_bits())
         self.tick("JMPA")
         self.latch_pc_high_bits(self.imem.load()["value"])
@@ -727,7 +728,7 @@ def configure_logger(logging_level):
     # Set the logging level for the root logger
     logging.basicConfig(level=logging_level, handlers=[])
 
-    log_folder = 'log'
+    log_folder = 'log/model'
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
     os.makedirs(log_folder)
