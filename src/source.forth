@@ -1,3 +1,6 @@
-VARIABLE var 15 var !
-:func VARIABLE var 42 var ! ;
-var @
+read
+
+begin
+    read .
+    1 - dup 0 =
+until

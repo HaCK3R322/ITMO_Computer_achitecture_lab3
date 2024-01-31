@@ -763,6 +763,9 @@ def main(program_filepath, input_filepath, logging_level):
             input_file_string = input_file.read()
             for character in input_file_string:
                 simulation.cu.input_buffer.append(ord(character))
+                if len(simulation.cu.input_buffer) >= 255:
+                    logging.warning(f"WARNING: Input buffer overflow! Max len: 255. Rest of input will be dropped.")
+                    break
             simulation.cu.input_buffer.reverse()
             simulation.cu.input_buffer.append(len(simulation.cu.input_buffer))
 
