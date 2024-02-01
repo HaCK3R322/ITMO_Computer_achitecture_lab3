@@ -123,6 +123,18 @@ class Translator:
             self.current_token = token
             self.current_token_index = i
 
+            if len(self.variables) > 0 and self.variables[-1].name is None:
+                variable_name = token
+                if self.is_name_valid(variable_name):
+                    if self.currently_defining_function_with_name is not None:
+                        variable_name = self.currently_defining_function_with_name + "." + variable_name
+
+                    logging.info(
+                        f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
+                    self.variables[-1].name = variable_name
+                else:
+                    raise SyntaxError(f"Variable with name {variable_name} already defined or clashes with reserved word")
+
             if token == "+":
                 self.append("SUM")
             elif token == "-":
@@ -183,7 +195,7 @@ class Translator:
             elif token[0] == ':':
                 function_name = token[1:]
                 if self.get_function_by_name(function_name) is not None:
-                    raise NameError(f"function with name {function_name} already defined!")
+                    raise SyntaxError(f"function with name {function_name} already defined!")
 
                 if self.currently_defining_function_with_name is not None:
                     raise SyntaxError(
@@ -307,18 +319,6 @@ class Translator:
                 self.VARIABLES_VALUES_ADDRESS += 3
                 self.VARIABLES_ADDRESSES_ADDRESS += 2
 
-            elif len(self.variables) > 0 and self.variables[-1].name is None:
-                variable_name = token
-                if self.is_name_valid(variable_name):
-                    if self.currently_defining_function_with_name is not None:
-                        variable_name = self.currently_defining_function_with_name + "." + variable_name
-
-                    logging.info(
-                        f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
-                    self.variables[-1].name = variable_name
-                else:
-                    raise SyntaxError(f"Variable with name {variable_name} already defined!")
-
             elif self.get_variable_by_name(token) is not None:
                 variables_addresses_offset_index = 4
                 self.append("LOAD", offset=variables_addresses_offset_index)
@@ -343,7 +343,7 @@ class Translator:
                 self.append("CALL", offset=func.call_offset)
 
             else:
-                raise ValueError(f'Unknown token [{token}]')
+                raise SyntaxError(f'Unknown token [{token}]')
 
         self.add_instruction(Instruction("HLT", -1))
 
@@ -499,7 +499,7 @@ class Translator:
                     instr.offset = reserved_offset
 
     def process_until_for_regular(self):
-        print("Processing UNTIL token outside of any function")
+        logging.info("Processing UNTIL token outside of any function")
         number_of_added_instructions = self.instruction_counter - self.begin_last_label_stack.pop()
 
         shift = self.get_address_tables_size()
@@ -939,6 +939,7 @@ def main(source_path, output_path):
 
         with open(output_path, "w", encoding="utf-8") as bin_file:
             bin_file.write(json.dumps(program, indent=4))
+    logging.shutdown()
 
 
 if __name__ == '__main__':

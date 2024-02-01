@@ -1,14 +1,10 @@
+import logging
 import unittest
-import contextlib
-import pytest
-import sys
-import yaml
 import tempfile
 import os
 import shutil
-from io import StringIO
-from src import machine
-from src import translator
+from src.model import main as model_main
+from src.translatorv2 import main as translator_main
 
 
 class TestAll(unittest.TestCase):
@@ -17,47 +13,42 @@ class TestAll(unittest.TestCase):
 
     def test_cat(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('test/integrational/examples/input.txt', tmpdir)
+            shutil.copy('examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'target.out')
-            output_file_path = os.path.join(tmpdir, 'out.txt')
+            target_file_path = os.path.join(tmpdir, 'program.lab')
+            output_file_path = os.path.join(tmpdir, "output.txt")
 
-            translator.main('test/integrational/examples/cat.forth',
-                            target_file_path)
-            machine.main(target_file_path, input_file_path, output_file_path)
+            translator_main('examples/cat.forth', target_file_path)
+            model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
-                assert file.read() == "foo bar 000123000"
+                assert file.read() == "foo bar 42"
 
     def test_hello_world(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('test/integrational/examples/input.txt', tmpdir)
+            shutil.copy('examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'target.out')
-            output_file_path = os.path.join(tmpdir, 'out.txt')
+            target_file_path = os.path.join(tmpdir, 'program.lab')
+            output_file_path = os.path.join(tmpdir, "output.txt")
 
-            translator.main('test/integrational/examples/hello_world.forth',
-                            target_file_path)
-            machine.main(target_file_path, input_file_path, output_file_path)
+            translator_main('examples/hello_world.forth', target_file_path)
+            model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
                 assert file.read() == "Hello world!"
 
     def test_prob1(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('test/integrational/examples/input.txt', tmpdir)
+            shutil.copy('examples/input.txt', tmpdir)
 
             input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'target.out')
-            output_file_path = os.path.join(tmpdir, 'out.txt')
+            target_file_path = os.path.join(tmpdir, 'program.lab')
+            output_file_path = os.path.join(tmpdir, "output.txt")
 
-            translator.main('test/integrational/examples/prob1.forth',
-                            target_file_path)
-            machine.main(target_file_path, input_file_path, output_file_path)
+            translator_main('examples/prob1.forth', target_file_path)
+            model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
                 assert file.read() == "233168"
-
-

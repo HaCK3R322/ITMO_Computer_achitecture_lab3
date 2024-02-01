@@ -1,4 +1,5 @@
-__all__ = ['Translator', 'Simpulation', 'translator', 'machine']
+__all__ = ['model', 'translatorv2', 'Translator']
 
-from .translator import Translator
-from .machine import Simpulation
+from .model import main as model
+from .translatorv2 import main as translatorv2
+from .translatorv2 import Translator

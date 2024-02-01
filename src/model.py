@@ -749,7 +749,7 @@ def configure_logger(logging_level):
     logging.getLogger().addHandler(file_handler)
 
 
-def main(program_filepath, input_filepath, logging_level):
+def main(program_filepath, input_filepath, output_file_path, logging_level):
     configure_logger(logging_level)
 
     with open(input_filepath, encoding="utf-8") as input_file:
@@ -802,12 +802,18 @@ def main(program_filepath, input_filepath, logging_level):
                 logging.log(logging.INFO, ']')
                 logging.log(logging.INFO, f'Output buffer jointed: "{''.join(simulation.cu.output_buffer)}"')
 
+                with open(output_file_path, "w", encoding="utf-8") as output_file:
+                    output_file.write(''.join(simulation.cu.output_buffer))
+
+    logging.shutdown()
+
 
 if __name__ == '__main__':
     source_code_path_arg = sys.argv[1]
     input_filepath_arg = sys.argv[2]
-    logging_level_arg = sys.argv[3]
+    output_filepath = sys.argv[3]
+    logging_level_arg = sys.argv[4]
 
-    model_debug_leve = logging.debug if logging_level_arg != "info" else logging.INFO
+    model_debug_level = logging.debug if logging_level_arg != "info" else logging.INFO
 
-    main(source_code_path_arg, input_filepath_arg, model_debug_leve)
+    main(source_code_path_arg, input_filepath_arg, output_filepath, model_debug_level)
