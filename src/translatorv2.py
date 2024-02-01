@@ -135,7 +135,7 @@ class Translator:
                 else:
                     raise SyntaxError(f"Variable with name {variable_name} already defined or clashes with reserved word")
 
-            if token == "+":
+            elif token == "+":
                 self.append("SUM")
             elif token == "-":
                 self.append("SUB")

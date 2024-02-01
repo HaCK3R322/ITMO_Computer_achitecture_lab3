@@ -61,6 +61,13 @@ class TestTranslator(unittest.TestCase):
         translator = Translator(source)
         with self.assertRaises(SyntaxError):
             translator.translate()
+
+    def test_variable_declaration_with_decimal_name(self):
+        source = "VARIABLE 2lol"
+        translator = Translator(source)
+        with self.assertRaises(SyntaxError):
+            translator.translate()
+
 #
 #     def test_translate_if_then(self):
 #         code = "IF 10 THEN"
