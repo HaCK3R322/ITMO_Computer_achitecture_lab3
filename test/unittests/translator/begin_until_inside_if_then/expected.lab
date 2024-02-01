@@ -1,0 +1,247 @@
+[{
+            "value": "LOAD",
+            "related_token_index": 0,
+            "related_token": "-1",
+            "offset": 0
+        },
+        {
+            "value": "LOAD",
+            "related_token_index": 0,
+            "related_token": "-1",
+            "offset": 1
+        },
+        {
+            "value": "GET",
+            "related_token_index": 0,
+            "related_token": "-1",
+            "offset": null
+        },
+        {
+            "value": "FALSE",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": null
+        },
+        {
+            "value": "CMP",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": null
+        },
+        {
+            "value": "JZ",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": 1
+        },
+        {
+            "value": "JMPR",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": 1
+        },
+        {
+            "value": "JMPA",
+            "related_token_index": 1,
+            "related_token": "IF",
+            "offset": 1
+        },
+        {
+            "value": "FALSE",
+            "related_token_index": 2,
+            "related_token": "0",
+            "offset": null
+        },
+        {
+            "value": "FALSE",
+            "related_token_index": 4,
+            "related_token": "1",
+            "offset": null
+        },
+        {
+            "value": "INC",
+            "related_token_index": 4,
+            "related_token": "1",
+            "offset": null
+        },
+        {
+            "value": "SUM",
+            "related_token_index": 5,
+            "related_token": "+",
+            "offset": null
+        },
+        {
+            "value": "DUP",
+            "related_token_index": 6,
+            "related_token": "DUP",
+            "offset": null
+        },
+        {
+            "value": "LOAD",
+            "related_token_index": 7,
+            "related_token": "10",
+            "offset": 0
+        },
+        {
+            "value": "LOAD",
+            "related_token_index": 7,
+            "related_token": "10",
+            "offset": 1
+        },
+        {
+            "value": "INC",
+            "related_token_index": 7,
+            "related_token": "10",
+            "offset": null
+        },
+        {
+            "value": "GET",
+            "related_token_index": 7,
+            "related_token": "10",
+            "offset": null
+        },
+        {
+            "value": "CMP",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "JZ",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": 4
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "FALSE",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "JMPR",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": 3
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "TRUE",
+            "related_token_index": 8,
+            "related_token": "=",
+            "offset": null
+        },
+        {
+            "value": "FALSE",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": null
+        },
+        {
+            "value": "CMP",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": null
+        },
+        {
+            "value": "DROP",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": null
+        },
+        {
+            "value": "JZ",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": 1
+        },
+        {
+            "value": "JMPR",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": 1
+        },
+        {
+            "value": "JMPA",
+            "related_token_index": 9,
+            "related_token": "UNTIL",
+            "offset": 0
+        },
+        {
+            "value": "LOAD",
+            "related_token_index": 11,
+            "related_token": "0XBB",
+            "offset": 0
+        },
+        {
+            "value": "LOAD",
+            "related_token_index": 11,
+            "related_token": "0XBB",
+            "offset": 1
+        },
+        {
+            "value": "INC",
+            "related_token_index": 11,
+            "related_token": "0XBB",
+            "offset": null
+        },
+        {
+            "value": "INC",
+            "related_token_index": 11,
+            "related_token": "0XBB",
+            "offset": null
+        },
+        {
+            "value": "GET",
+            "related_token_index": 11,
+            "related_token": "0XBB",
+            "offset": null
+        },
+        {
+            "value": "HLT",
+            "related_token_index": -1,
+            "related_token": null,
+            "offset": null
+        }
+    ]

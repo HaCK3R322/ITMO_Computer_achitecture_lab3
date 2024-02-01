@@ -68,6 +68,49 @@ class TestTranslator(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             translator.translate()
 
+    def test_function_declaration_inside_function(self):
+        source = ":func1 :func2 ; ;"
+        translator = Translator(source)
+        with self.assertRaises(SyntaxError):
+            translator.translate()
+
+    def test_begin_until_inside_function(self):
+        with open('begin_until_inside_function/source.forth') as source_file:
+            with open('begin_until_inside_function/expected.lab') as expected_file:
+                source = source_file.read()
+                translator = Translator(source)
+                translator.translate()
+                translated_instructions = translator.convert_instructions_to_list()[self.instructions_start_address:]
+                expected_instructions = json.loads(expected_file.read())
+
+                self.assertEqual(translated_instructions, expected_instructions)
+
+    def test_begin_until_inside_if_then(self):
+        with open('begin_until_inside_if_then/source.forth') as source_file:
+            with open('begin_until_inside_if_then/expected.lab') as expected_file:
+                source = source_file.read()
+                translator = Translator(source)
+                translator.translate()
+                translated_instructions = translator.convert_instructions_to_list()[self.instructions_start_address:]
+                expected_instructions = json.loads(expected_file.read())
+
+                self.assertEqual(translated_instructions, expected_instructions)
+
+    def test_nested_begin_inside_nested_if_inside_function_inside_begin(self):
+        with open('nested_begin_inside_nested_if_inside_function_inside_begin/source.forth') as source_file:
+            with open('nested_begin_inside_nested_if_inside_function_inside_begin/expected.lab') as expected_file:
+                source = source_file.read()
+                translator = Translator(source)
+                translator.translate()
+
+                translated_instructions = translator.convert_instructions_to_list()[self.instructions_start_address:]
+                expected_instructions = json.loads(expected_file.read())
+
+                self.assertEqual(translated_instructions, expected_instructions)
+
+
+
+
 #
 #     def test_translate_if_then(self):
 #         code = "IF 10 THEN"

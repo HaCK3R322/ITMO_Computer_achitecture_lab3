@@ -425,7 +425,7 @@ class Translator:
             self.instruction_counter += 1
         else:
             logging.info(
-                f"Appending instruction {instruction.value} (function {self.currently_defining_function_with_name})")
+                f"Appending instruction {instruction.value} (function {self.currently_defining_function_with_name}) (token \'{self.current_token}\')")
             function = self.get_function_by_name(self.currently_defining_function_with_name)
             function.add_instruction(instruction)
 
@@ -489,14 +489,17 @@ class Translator:
                 if instr.value == "JMPA" and instr.offset == -1:
                     assert func.start_address != -1, f'FUNC START ADDRESS {func.start_address}'
 
-                    reserved_offset = self.jmp.reserve()
-                    relative_jmp_address = sorted_labels.pop(0)[1]  # ~ instruction counter
-                    shift = func.start_address
-                    jmp_address = relative_jmp_address + shift
+                    try:
+                        reserved_offset = self.jmp.reserve()
+                        relative_jmp_address = sorted_labels.pop(0)[1]  # ~ instruction counter
+                        shift = func.start_address
+                        jmp_address = relative_jmp_address + shift
 
-                    self.jmp.write_to_offset(reserved_offset, jmp_address)
+                        self.jmp.write_to_offset(reserved_offset, jmp_address)
 
-                    instr.offset = reserved_offset
+                        instr.offset = reserved_offset
+                    except IndexError:
+                        raise SyntaxError(f'Run out of labels during processing IF statement inside function {func.name}. Maybe forgot THEN after some IF?')
 
     def process_until_for_regular(self):
         logging.info("Processing UNTIL token outside of any function")
@@ -931,14 +934,21 @@ def main(source_path, output_path):
 
         logging.info("\n===== translation start =====")
         translator = Translator(source_code)
-        instructions, data = translator.translate()
-        logging.info("===== translation end =====\n")
-        logging.info(f"Total number of translated instructions: {len(translator.instructions) - 0x00C0}")
 
-        program = {"instructions": translator.convert_instructions_to_list(), "data": data}
+        try:
+            instructions, data = translator.translate()
+            logging.info("===== translation end =====\n")
+            logging.info(f"Total number of translated instructions: {len(translator.instructions) - 0x00C0}")
 
-        with open(output_path, "w", encoding="utf-8") as bin_file:
-            bin_file.write(json.dumps(program, indent=4))
+            program = {"instructions": translator.convert_instructions_to_list(), "data": data}
+
+            with open(output_path, "w", encoding="utf-8") as bin_file:
+                bin_file.write(json.dumps(program, indent=4))
+
+        except SyntaxError as syntax_error:
+            logging.info(f'TRANSLATION SYNTAX ERROR: {syntax_error}')
+            raise syntax_error
+
     logging.shutdown()
 
 
