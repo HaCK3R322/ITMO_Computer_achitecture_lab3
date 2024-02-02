@@ -32,7 +32,7 @@ jobs:
     - name: run golden tests MODEL
       run: |
         python -m unittest -v -b test/golden/TestAllGoldenModel.py
-#
-#    - name: run integrational tests
-#      run: |
-#        python -m unittest -v -b test/integrational/TestAll.py
+
+    - name: run integrational tests
+      run: |
+        python -m unittest -v -b test/integrational/TestAll.py

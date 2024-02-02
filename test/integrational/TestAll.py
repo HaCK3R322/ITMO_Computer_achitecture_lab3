@@ -11,16 +11,19 @@ from src.translatorv2 import main as translator_main
 class TestAll(unittest.TestCase):
     def setUp(self):
         print(self._testMethodDoc)
+        self.script_directory = os.path.dirname(os.path.abspath(__file__))
 
     def test_cat(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            original_input_file_path = os.path.join(self.script_directory, 'examples', 'input.txt')
+            shutil.copy(original_input_file_path, tmpdir)
 
-            input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'program.lab')
-            output_file_path = os.path.join(tmpdir, "output.txt")
+            input_file_path = os.path.join(self.script_directory, tmpdir, 'input.txt')
+            target_file_path = os.path.join(self.script_directory, tmpdir, 'program.lab')
+            output_file_path = os.path.join(self.script_directory, tmpdir, "output.txt")
+            source_file_path = os.path.join(self.script_directory, 'examples', "cat.forth")
 
-            translator_main('examples/cat.forth', target_file_path)
+            translator_main(source_file_path, target_file_path)
             model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
@@ -28,13 +31,15 @@ class TestAll(unittest.TestCase):
 
     def test_hello_world(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            original_input_file_path = os.path.join(self.script_directory, 'examples', 'input.txt')
+            shutil.copy(original_input_file_path, tmpdir)
 
-            input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'program.lab')
-            output_file_path = os.path.join(tmpdir, "output.txt")
+            input_file_path = os.path.join(self.script_directory, tmpdir, 'input.txt')
+            target_file_path = os.path.join(self.script_directory, tmpdir, 'program.lab')
+            output_file_path = os.path.join(self.script_directory, tmpdir, "output.txt")
+            source_file_path = os.path.join(self.script_directory, 'examples', "hello_world.forth")
 
-            translator_main('examples/hello_world.forth', target_file_path)
+            translator_main(source_file_path, target_file_path)
             model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
@@ -42,13 +47,15 @@ class TestAll(unittest.TestCase):
 
     def test_prob1(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            shutil.copy('examples/input.txt', tmpdir)
+            original_input_file_path = os.path.join(self.script_directory, 'examples', 'input.txt')
+            shutil.copy(original_input_file_path, tmpdir)
 
-            input_file_path = os.path.join(tmpdir, 'input.txt')
-            target_file_path = os.path.join(tmpdir, 'program.lab')
-            output_file_path = os.path.join(tmpdir, "output.txt")
+            input_file_path = os.path.join(self.script_directory, tmpdir, 'input.txt')
+            target_file_path = os.path.join(self.script_directory, tmpdir, 'program.lab')
+            output_file_path = os.path.join(self.script_directory, tmpdir, "output.txt")
+            source_file_path = os.path.join(self.script_directory, 'examples', "prob1.forth")
 
-            translator_main('examples/prob1.forth', target_file_path)
+            translator_main(source_file_path, target_file_path)
             model_main(target_file_path, input_file_path, output_file_path, logging.INFO)
 
             with open(output_file_path) as file:
