@@ -25,9 +25,9 @@ class TestAllGoldenModel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             log_folder = os.path.join(self.script_directory, 'log', 'model', 'cat_logger')
             cat_logger = configure_logger(logging_level=logging.INFO, logger_name="cat_logger", log_folder=log_folder)
-            output_file_path = os.path.join(tmpdir, 'output.txt')
-            program_file_path = 'programs/cat.lab'
-            input_file_path = 'examples/input.txt'
+            output_file_path = os.path.join(self.script_directory, tmpdir, 'output.txt')
+            program_file_path = os.path.join(self.script_directory, 'programs/cat.lab')
+            input_file_path = os.path.join(self.script_directory, 'examples/input.txt')
 
             model_main(program_file_path, input_file_path, output_file_path, logger=cat_logger)
 
@@ -41,9 +41,9 @@ class TestAllGoldenModel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             log_folder = os.path.join(self.script_directory, 'log', 'model', 'hello_world_logger')
             hello_world_logger = configure_logger(logging_level=logging.INFO, logger_name="hello_world_logger", log_folder=log_folder)
-            output_file_path = os.path.join(tmpdir, 'output.txt')
-            program_file_path = 'programs/hello_world.lab'
-            input_file_path = 'examples/input.txt'
+            output_file_path = os.path.join(self.script_directory, tmpdir, 'output.txt')
+            program_file_path = os.path.join(self.script_directory, 'programs/hello_world.lab')
+            input_file_path = os.path.join(self.script_directory, 'examples/input.txt')
 
             model_main(program_file_path, input_file_path, output_file_path, logger=hello_world_logger)
 
@@ -57,9 +57,9 @@ class TestAllGoldenModel(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             log_folder = os.path.join(self.script_directory, 'log', 'model', 'prob1_logger')
             prob1_logger = configure_logger(logging_level=logging.INFO, logger_name="prob1_logger", log_folder=log_folder)
-            output_file_path = os.path.join(tmpdir, 'output.txt')
-            program_file_path = 'programs/prob1.lab'
-            input_file_path = 'examples/input.txt'
+            output_file_path = os.path.join(self.script_directory, tmpdir, 'output.txt')
+            program_file_path = os.path.join(self.script_directory, 'programs/prob1.lab')
+            input_file_path = os.path.join(self.script_directory, 'examples/input.txt')
 
             model_main(program_file_path, input_file_path, output_file_path, logger=prob1_logger)
 
