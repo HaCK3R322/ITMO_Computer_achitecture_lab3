@@ -17,12 +17,9 @@ jobs:
          python -m pip install --upgrade pip
          pip install -r requirements.txt
 
-    - name: Change directory to unittests translator
-      run: cd test/unittests/translator
-
     - name: run TRANSLATOR unit tests
       run: |
-        python -m unittest -v -b test/unittests/translator/TestTranslator.py
+        python -m unittest -v -b -s test/unittests/translator/ TestTranslator.py
 #
 #    - name: run MODEL unit tests
 #      run: |
