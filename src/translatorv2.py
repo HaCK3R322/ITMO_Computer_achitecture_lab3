@@ -901,7 +901,7 @@ class Translator:
         return True
 
 
-def configure_logger(logging_level, logger_name=None):
+def configure_logger(logging_level, logger_name=None, log_folder=None):
     if logger_name is None:
         logger_name = "default_translator_logger"
 
@@ -911,7 +911,9 @@ def configure_logger(logging_level, logger_name=None):
     configured_logger.setLevel(logging_level)
     configured_logger.handlers = []
 
-    log_folder = f'log/translator/{logger_name}'
+    if log_folder is None:
+        log_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'log', 'translator', logger_name)
+
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
     os.makedirs(log_folder)

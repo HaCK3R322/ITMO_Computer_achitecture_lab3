@@ -22,7 +22,8 @@ class TestAllGoldenTranslator(unittest.TestCase):
         return True
 
     def test_cat(self):
-        cat_logger = configure_logger(logging_level=logging.INFO, logger_name="cat_logger")
+        log_folder = os.path.join(self.script_directory, 'log', 'translator', 'cat_logger')
+        cat_logger = configure_logger(logging_level=logging.INFO, logger_name="cat_logger", log_folder=log_folder)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             source_file_path = os.path.join(self.script_directory, 'examples', 'cat.forth')
@@ -36,7 +37,8 @@ class TestAllGoldenTranslator(unittest.TestCase):
             self.assertTrue(self.are_files_equal(golden_path, actual_log_path))
 
     def test_hello_world(self):
-        hello_world_logger = configure_logger(logging_level=logging.INFO, logger_name="hello_world_logger")
+        log_folder = os.path.join(self.script_directory, 'log', 'translator', 'hello_world_logger')
+        hello_world_logger = configure_logger(logging_level=logging.INFO, logger_name="hello_world_logger", log_folder=log_folder)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             source_file_path = os.path.join(self.script_directory, 'examples', 'hello_world.forth')
@@ -50,7 +52,9 @@ class TestAllGoldenTranslator(unittest.TestCase):
             self.assertTrue(self.are_files_equal(golden_path, actual_log_path))
 
     def test_prob1(self):
-        prob1_logger = configure_logger(logging_level=logging.INFO, logger_name="prob1_logger")
+        log_folder = os.path.join(self.script_directory, 'log', 'translator', 'prob1_logger')
+        prob1_logger = configure_logger(logging_level=logging.INFO, logger_name="prob1_logger",
+                                              log_folder=log_folder)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             source_file_path = os.path.join(self.script_directory, 'examples', 'prob1.forth')
