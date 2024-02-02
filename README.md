@@ -239,7 +239,7 @@ var @
 
 Интерфейс командной строки: `translator.py <input_file> <target_file>"`
 
-Реализовано в модуле: [translator.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/translator.py)
+Реализовано в модуле: [translatorv2.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/translatorv2.py)
 
 Этапы трансляции (функция `translate`):
 
@@ -257,9 +257,9 @@ var @
 
 ## Модель процессора
 
-Реализовано в модуле: [machine.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/machine.py).
+Реализовано в модуле: [model.py](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/src/model.py).
 
-![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/Схема.png)
+![Image alt](https://github.com/HaCK3R322/ITMO_Computer_achitecture_lab3/blob/master/Архитектура.png)
 
 Примечание по схеме: красным обозначены порты входа/выхода, синим - сигналы выбора исходящие от CU, черным - шины данных, серым - сигналы флагов ALU
 
