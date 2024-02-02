@@ -8,10 +8,11 @@ import time
 
 
 class Stack:
-    def __init__(self):
+    def __init__(self, logger):
         self.data = [0] * 0x10000  # addresses from 0x0000 to 0xFFFF
         self.sp = 0xFFFE
         self.tos = 0x00
+        self.logger = logger
 
     def get_next(self):
         # not exactly next, but returns value from stack by SP
@@ -67,11 +68,11 @@ class Stack:
         if self.sp < 0xFFFD:
             for address in range(self.sp + 1):
                 decimal_representation = self.data[address] if self.data[address] < 128 else self.data[address] - 256
-                logging.log(logging.INFO,
+                self.logger.log(logging.INFO,
                             f"0x{address:04X} | 0x{self.data[address]:02X}  ==  {decimal_representation} {' <-- ' if self.sp == address else ''}")
-        logging.log(logging.INFO, '-------------')
+        self.logger.log(logging.INFO, '-------------')
         decimal_representation = self.tos if self.tos < 128 else self.tos - 256
-        logging.log(logging.INFO, f" TOS   | 0x{self.tos:02X}  ==  {decimal_representation}")
+        self.logger.log(logging.INFO, f" TOS   | 0x{self.tos:02X}  ==  {decimal_representation}")
 
 
 class RAM:
@@ -163,11 +164,11 @@ class Decoder:
 
 
 class ControlUnit:
-    def __init__(self):
+    def __init__(self, logger):
         self.pc = 0
 
-        self.stack = Stack()
-        self.rstack = Stack()
+        self.stack = Stack(logger)
+        self.rstack = Stack(logger)
         self.ram = RAM()
         self.imem = InstructionsMemory()
         self.input_buffer = []
@@ -181,6 +182,7 @@ class ControlUnit:
 
         self.ticks = 0
         self.need_print_state = True
+        self.logger = logger
 
     def get_stack_str(self, stack):
         a = stack.sp - 3 if stack.sp - 3 > -1 else 999999
@@ -212,7 +214,7 @@ class ControlUnit:
     def tick(self, instruction_name):
         self.ticks += 1
         if self.need_print_state:
-            logging.log(logging.DEBUG, self.get_state_str(instruction_name))
+            self.logger.log(logging.DEBUG, self.get_state_str(instruction_name))
 
     def latch_pc_low_bits(self, address_low_bits):
         assert 0x00 <= address_low_bits <= 0xFF, f'INSTRUCTION MEMORY: address low bits {hex(address_low_bits)} out of bounds'
@@ -700,8 +702,8 @@ class ControlUnit:
 
 
 class Simulation:
-    def __init__(self):
-        self.cu = ControlUnit()
+    def __init__(self, logger):
+        self.cu = ControlUnit(logger)
         self.cu.input_buffer = []
         self.cu.output_buffer = []
 
@@ -729,11 +731,17 @@ class Simulation:
             self.increment_program_counter()
 
 
-def configure_logger(logging_level):
-    # Set the logging level for the root logger
-    logging.basicConfig(level=logging_level, handlers=[])
+def configure_logger(logging_level, logger_name=None):
+    if logger_name is None:
+        logger_name = "default_model_logger"
 
-    log_folder = 'log/model'
+    configured_logger = logging.getLogger(logger_name)
+
+    # Set the logging level for the root logger
+    configured_logger.setLevel(logging_level)
+    configured_logger.handlers = []
+
+    log_folder = f'log/model/{logger_name}'
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
     os.makedirs(log_folder)
@@ -741,8 +749,9 @@ def configure_logger(logging_level):
     # Set the maximum log file size
     log_file_max_size = 50 * 1024 * 1024  # 50 MB
 
+    logfile_path = os.path.join(log_folder, logger_name + '.log')
     # Create a rotating file handler
-    file_handler = RotatingFileHandler(os.path.join(log_folder, 'model.log'), maxBytes=log_file_max_size,
+    file_handler = RotatingFileHandler(logfile_path, maxBytes=log_file_max_size,
                                        backupCount=999)
     file_handler.setLevel(logging_level)
 
@@ -751,17 +760,23 @@ def configure_logger(logging_level):
     file_handler.setFormatter(formatter)
 
     # Add the file handler to the root logger
-    logging.getLogger().addHandler(file_handler)
+    configured_logger.handlers.append(file_handler)
+
+    return configured_logger
 
 
-def main(program_filepath, input_filepath, output_file_path, logging_level):
-    configure_logger(logging_level)
+def main(program_filepath, input_filepath, output_file_path, logging_level=None, logger=None):
+    if logging_level is None:
+        logging_level = logging.INFO
+
+    if logger is None:
+        logger = configure_logger(logging_level=logging_level)
 
     with open(input_filepath, encoding="utf-8") as input_file:
         with open(program_filepath, encoding="utf-8") as program_file:
             program = json.loads(program_file.read())
 
-            simulation = Simulation()
+            simulation = Simulation(logger)
             simulation.cu.imem.init_data(program["instructions"])
             simulation.cu.ram.data = program["data"]
 
@@ -769,47 +784,48 @@ def main(program_filepath, input_filepath, output_file_path, logging_level):
             for character in input_file_string:
                 simulation.cu.input_buffer.append(ord(character))
                 if len(simulation.cu.input_buffer) >= 255:
-                    logging.warning(f"WARNING: Input buffer overflow! Max len: 255. Rest of input will be dropped.")
+                    logger.warning(f"WARNING: Input buffer overflow! Max len: 255. Rest of input will be dropped.")
                     break
             simulation.cu.input_buffer.reverse()
             simulation.cu.input_buffer.append(len(simulation.cu.input_buffer))
 
             try:
-                logging.log(logging.INFO, f'Original input: "{input_file_string}"')
-                logging.info("Reversed input buffer:")
+                logger.log(logging.INFO, f'Original input: "{input_file_string}"')
+                logger.info("Reversed input buffer:")
                 for index, character in enumerate(simulation.cu.input_buffer):
-                    logging.log(logging.INFO, f"    {index}: {character}")
-                logging.log(logging.INFO, ']')
+                    logger.log(logging.INFO, f"    {index}: {character}")
+                logger.log(logging.INFO, ']')
 
-                logging.info("\nNot void imem:")
+                logger.info("\nNot void imem:")
                 for i, instr in enumerate(simulation.cu.imem.data):
                     if instr["value"] != 0:
                         try:
                             int(instr["value"])
-                            logging.info(f'0x{i:04X} | 0x{instr["value"]:04X}')
+                            logger.info(f'0x{i:04X} | 0x{instr["value"]:04X}')
                         except ValueError:
-                            logging.info(f'0x{i:04X} | {instr["value"]}')
+                            logger.info(f'0x{i:04X} | {instr["value"]}')
 
                 start_time = time.time()
-                logging.log(logging.INFO, f"\n=== Simulation start ===")
+                logger.log(logging.INFO, f"\n=== Simulation start ===")
                 simulation.simulate()
             except Exception as e:
-                logging.log(logging.INFO, e)
-                logging.log(logging.INFO,
+                logger.log(logging.INFO, e)
+                logger.log(logging.INFO,
                             f"=== Simulation end. Ticks: {simulation.cu.ticks}. Time elapsed: {time.time() - start_time:.6f}s ===")
 
-                logging.log(logging.INFO, "\nStack printed:")
+                logger.log(logging.INFO, "\nStack printed:")
                 simulation.cu.stack.print_stack()
 
-                logging.log(logging.INFO, "\nOutput buffer: [")
+                logger.log(logging.INFO, "\nOutput buffer: [")
                 for index, character in enumerate(simulation.cu.output_buffer):
-                    logging.log(logging.INFO, f"    {index}: {character}")
-                logging.log(logging.INFO, ']')
-                logging.log(logging.INFO, f'Output buffer jointed: "{''.join(simulation.cu.output_buffer)}"')
+                    logger.log(logging.INFO, f"    {index}: {character}")
+                logger.log(logging.INFO, ']')
+                logger.log(logging.INFO, f'Output buffer jointed: "{''.join(simulation.cu.output_buffer)}"')
 
                 with open(output_file_path, "w", encoding="utf-8") as output_file:
                     output_file.write(''.join(simulation.cu.output_buffer))
 
+    logger.handlers[0].flush()
     logging.shutdown()
 
 
@@ -821,4 +837,4 @@ if __name__ == '__main__':
 
     model_debug_level = logging.debug if logging_level_arg != "info" else logging.INFO
 
-    main(source_code_path_arg, input_filepath_arg, output_filepath, model_debug_level)
+    main(source_code_path_arg, input_filepath_arg, output_filepath, logging_level=logging.INFO)

@@ -1,10 +1,5 @@
 import json
 import unittest
-import unittest
-import tempfile
-import os
-import shutil
-from src.model import main as model_main
 from src.translatorv2 import Translator
 
 

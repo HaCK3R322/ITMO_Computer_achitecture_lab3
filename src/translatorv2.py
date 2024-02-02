@@ -9,12 +9,13 @@ from typing import Tuple
 
 
 class AddressTable:
-    def __init__(self, size, start_address, name):
+    def __init__(self, size, start_address, name, logger):
         self.data: List[int] = [0] * (size * 2)
         self.max_size: int = size
         self.reserved_count: int = 0
         self.start_address: int = start_address
         self.name = name
+        self.logger = logger
 
     def reserve(self) -> int:
         assert self.reserved_count < self.max_size, f'CANT GET MORE TO ADDRESS TABLE OF {self.start_address:04X}'
@@ -23,18 +24,18 @@ class AddressTable:
         return reserved_offset
 
     def write_to_offset(self, offset, value):
-        logging.info(
+        self.logger.info(
             f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2:04X}] = {(value >> 8) & 0xFF:02X}")
         self.data[offset * 2] = (value >> 8) & 0xFF
-        logging.info(
+        self.logger.info(
             f"Writing to table {self.name} offset {offset}: imem[{self.start_address + offset * 2 + 1:04X}] = {value & 0xFF:02X}")
         self.data[offset * 2 + 1] = value & 0xFF
 
     def print(self):
-        logging.info('----------------')
+        self.logger.info('----------------')
         for index, value in enumerate(self.data):
-            logging.info(f'| 0x{index:04X} | {self.data[index]:02x} |')
-        logging.info('----------------')
+            self.logger.info(f'| 0x{index:04X} | {self.data[index]:02x} |')
+        self.logger.info('----------------')
 
     def get_as_instructions_data(self):
         instructions_data = []
@@ -77,14 +78,16 @@ class Variable:
 
 
 class Translator:
-    def __init__(self, sourcecode):
+    def __init__(self, sourcecode, logger=None):
+        self.logger = logger if logger is not None else configure_logger(logging_level=logging.INFO, logger_name="default_logger")
+
         self.source: str = sourcecode
         self.current_token = None
         self.current_token_index = -1
 
-        self.load = AddressTable(32, 0x0000, "LOAD table")
-        self.call = AddressTable(32, 0x0040, "CALL table")
-        self.jmp = AddressTable(32, 0x0080, "JMPA table")
+        self.load = AddressTable(32, 0x0000, "LOAD table", self.logger)
+        self.call = AddressTable(32, 0x0040, "CALL table", self.logger)
+        self.jmp = AddressTable(32, 0x0080, "JMPA table", self.logger)
 
         self.instructions: List[Instruction] = []
         self.instruction_counter = 0
@@ -114,7 +117,7 @@ class Translator:
     def translate(self):
         self.drop_out_comments_from_source_code()
         tokens: List[str] = self.tokenize()
-        logging.info(f"tokenized: {tokens}")
+        self.logger.info(f"tokenized: {tokens}")
 
         for i, token in enumerate(tokens):
             if token[0] != '"':
@@ -129,7 +132,7 @@ class Translator:
                     if self.currently_defining_function_with_name is not None:
                         variable_name = self.currently_defining_function_with_name + "." + variable_name
 
-                    logging.info(
+                    self.logger.info(
                         f"Assigning to variable with address 0x{self.variables[-1].address:04X} name {variable_name}")
                     self.variables[-1].name = variable_name
                 else:
@@ -250,7 +253,7 @@ class Translator:
                         self.push_constant_on_top(token_digit)
 
                     elif -8388608 <= token_digit <= 8388607:
-                        logging.info(
+                        self.logger.info(
                             f'WARNING: casting token {token} to TRIPLE-LENGTH INT, it will take 3 top-stack values and uses 3 LOAD cells')
                         if token_digit < 0:
                             token_digit += 0x1000000
@@ -420,11 +423,11 @@ class Translator:
 
     def add_instruction(self, instruction):
         if self.currently_defining_function_with_name is None:
-            logging.info(f"Appending instruction {instruction.value}")
+            self.logger.info(f"Appending instruction {instruction.value}")
             self.instructions.append(instruction)
             self.instruction_counter += 1
         else:
-            logging.info(
+            self.logger.info(
                 f"Appending instruction {instruction.value} (function {self.currently_defining_function_with_name}) (token \'{self.current_token}\')")
             function = self.get_function_by_name(self.currently_defining_function_with_name)
             function.add_instruction(instruction)
@@ -502,7 +505,7 @@ class Translator:
                         raise SyntaxError(f'Run out of labels during processing IF statement inside function {func.name}. Maybe forgot THEN after some IF?')
 
     def process_until_for_regular(self):
-        logging.info("Processing UNTIL token outside of any function")
+        self.logger.info("Processing UNTIL token outside of any function")
         number_of_added_instructions = self.instruction_counter - self.begin_last_label_stack.pop()
 
         shift = self.get_address_tables_size()
@@ -520,11 +523,11 @@ class Translator:
         self.append("JMPA", offset=reserved_offset_jmp)
 
     def preprocess_until_for_functions(self, func: Function):
-        logging.info(f"Pre-processing UNTIL token inside of function {func.name}: ")
+        self.logger.info(f"Pre-processing UNTIL token inside of function {func.name}: ")
         number_of_added_instructions = func.instructions_counter - func.begin_last_label_stack.pop()
 
         address_to_jmp_relative = func.instructions_counter - number_of_added_instructions - 1
-        logging.info(f"     relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
+        self.logger.info(f"     relative JMPA address = {address_to_jmp_relative} (0x{address_to_jmp_relative:04X})")
 
         reserved_jmp_offset = self.jmp.reserve()
 
@@ -541,13 +544,13 @@ class Translator:
 
     def postprocess_shift_functions_jmpa(self):
         for func in self.functions:
-            logging.info(f"Post-processing UNTIL token inside of function {func.name}: ")
+            self.logger.info(f"Post-processing UNTIL token inside of function {func.name}: ")
             for instr_and_shift in func.jmpa_instructions_and_reserved_offset_and_relative_shift:
                 jmpa_instruction = instr_and_shift[0]
                 address_to_jmp_relative = instr_and_shift[2]
                 new_jmpa_instruction_offset = func.start_address + address_to_jmp_relative
 
-                logging.info(f'    absolute JMPA: address = {new_jmpa_instruction_offset:04x}')
+                self.logger.info(f'    absolute JMPA: address = {new_jmpa_instruction_offset:04x}')
 
                 reserved_jmpa_offset = instr_and_shift[1]
                 self.jmp.write_to_offset(reserved_jmpa_offset, new_jmpa_instruction_offset)
@@ -555,12 +558,12 @@ class Translator:
     def define_functions(self):
         for func in self.functions:
             # add to each function RET
-            logging.info(f"Appending instruction RET (function {func.name})")
+            self.logger.info(f"Appending instruction RET (function {func.name})")
             func.add_instruction(Instruction("RET", -1))
 
             # add all instructions of function
             function_start = self.instruction_counter + self.get_address_tables_size()
-            logging.info(
+            self.logger.info(
                 f"Function {func.name} assigned start: {function_start:04X} = {self.instruction_counter} + {self.get_address_tables_size()} -> 0x{function_start - 1:02X}")
             func.start_address = function_start
             for instruction in func.instructions:
@@ -796,7 +799,7 @@ class Translator:
             raise ValueError(f"Unsigned constant {constant} out of bounds [0; 255]!")
 
         self.data[self.CONSTANTS_START_ADDRESS] = constant
-        logging.info(f'self.data[{self.CONSTANTS_START_ADDRESS:04X}] = {constant:02X}')
+        self.logger.info(f'self.data[{self.CONSTANTS_START_ADDRESS:04X}] = {constant:02X}')
         self.append("LOAD", offset=0)
         self.append("LOAD", offset=1)
 
@@ -819,9 +822,9 @@ class Translator:
         self.data[self.TCONSTANTS_START_ADDRESS] = constant_high
         self.data[self.TCONSTANTS_START_ADDRESS + 1] = constant_mid
         self.data[self.TCONSTANTS_START_ADDRESS + 2] = constant_low
-        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS:04X}] = {constant_high:02X}')
-        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 1:04X}] = {constant_mid:02X}')
-        logging.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 2:04X}] = {constant_low:02X}')
+        self.logger.info(f'self.data[{self.TCONSTANTS_START_ADDRESS:04X}] = {constant_high:02X}')
+        self.logger.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 1:04X}] = {constant_mid:02X}')
+        self.logger.info(f'self.data[{self.TCONSTANTS_START_ADDRESS + 2:04X}] = {constant_low:02X}')
         self.append("LOAD", offset=2)
         self.append("LOAD", offset=3)
 
@@ -898,13 +901,17 @@ class Translator:
         return True
 
 
-def configure_logger(logging_level, logfile_name=None):
-    # Set the logging level for the root logger
-    logging.basicConfig(level=logging_level, handlers=[])
+def configure_logger(logging_level, logger_name=None):
+    if logger_name is None:
+        logger_name = "default_translator_logger"
 
-    log_folder = 'log/translator'
-    if logfile_name is not None:
-        log_folder += '/' + logfile_name
+    configured_logger = logging.getLogger(logger_name)
+
+    # Set the logging level for the root logger
+    configured_logger.setLevel(logging_level)
+    configured_logger.handlers = []
+
+    log_folder = f'log/translator/{logger_name}'
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
     os.makedirs(log_folder)
@@ -912,7 +919,7 @@ def configure_logger(logging_level, logfile_name=None):
     # Set the maximum log file size
     log_file_max_size = 50 * 1024 * 1024  # 50 MB
 
-    logfile_path = os.path.join(log_folder, 'tranlator.log' if logfile_name is None else logfile_name + '.log')
+    logfile_path = os.path.join(log_folder, logger_name + '.log')
     # Create a rotating file handler
     file_handler = RotatingFileHandler(logfile_path, maxBytes=log_file_max_size,
                                        backupCount=999)
@@ -923,25 +930,28 @@ def configure_logger(logging_level, logfile_name=None):
     file_handler.setFormatter(formatter)
 
     # Add the file handler to the root logger
-    logging.getLogger().addHandler(file_handler)
+    configured_logger.handlers.append(file_handler)
+
+    return configured_logger
 
 
-def main(source_path, output_path, logfile_name=None):
-    configure_logger(logging_level=logging.INFO, logfile_name=logfile_name)
+def main(source_path, output_path, configured_logger=None):
+    if configured_logger is None:
+        configured_logger = configure_logger(logging_level=logging.INFO, logger_name='default_translator_logger')
 
     with open(source_path, "r", encoding="utf-8") as source_file:
         source_code = source_file.read()
 
-        logging.info("SOURCE CODE:")
-        logging.info(source_code)
+        configured_logger.info("SOURCE CODE:")
+        configured_logger.info(source_code)
 
-        logging.info("\n===== translation start =====")
-        translator = Translator(source_code)
+        configured_logger.info("\n===== translation start =====")
+        translator = Translator(source_code, configured_logger)
 
         try:
             instructions, data = translator.translate()
-            logging.info("===== translation end =====\n")
-            logging.info(f"Total number of translated instructions: {len(translator.instructions) - 0x00C0}")
+            configured_logger.info("===== translation end =====\n")
+            configured_logger.info(f"Total number of translated instructions: {len(translator.instructions) - 0x00C0}")
 
             program = {"instructions": translator.convert_instructions_to_list(), "data": data}
 
@@ -949,10 +959,10 @@ def main(source_path, output_path, logfile_name=None):
                 bin_file.write(json.dumps(program, indent=4))
 
         except SyntaxError as syntax_error:
-            logging.info(f'TRANSLATION SYNTAX ERROR: {syntax_error}')
+            configured_logger.info(f'TRANSLATION SYNTAX ERROR: {syntax_error}')
             raise syntax_error
 
-    logging.getLogger().handlers[0].flush()
+    configured_logger.handlers[0].flush()
     logging.shutdown()
 
 

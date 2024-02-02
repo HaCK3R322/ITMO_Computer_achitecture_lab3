@@ -5,6 +5,7 @@ import shutil
 import unittest
 
 from src.translatorv2 import main as translator_main
+from src.translatorv2 import configure_logger
 
 
 class TestAllGoldenTranslator(unittest.TestCase):
@@ -20,22 +21,29 @@ class TestAllGoldenTranslator(unittest.TestCase):
         return True
 
     def test_cat(self):
+        cat_logger = configure_logger(logging_level=logging.INFO, logger_name="cat_logger")
+
         with tempfile.TemporaryDirectory() as tmpdir:
             target_file_path = os.path.join(tmpdir, 'program.lab')
-            translator_main('examples/cat.forth', target_file_path, 'test_cat')
+            translator_main('examples/cat.forth', target_file_path, cat_logger)
 
-            self.assertTrue(self.are_files_equal('tranlator_cat.log', 'log/translator/test_cat/test_cat.log'))
+            self.assertTrue(self.are_files_equal('golden/translator_cat.log',
+                                                 'log/translator/cat_logger/cat_logger.log'))
 
     def test_hello_world(self):
+        hello_world_logger = configure_logger(logging_level=logging.INFO, logger_name="hello_world_logger")
+
         with tempfile.TemporaryDirectory() as tmpdir:
             target_file_path = os.path.join(tmpdir, 'program.lab')
-            translator_main('examples/hello_world.forth', target_file_path, 'test_hello_world')
+            translator_main('examples/hello_world.forth', target_file_path, hello_world_logger)
 
-            self.assertTrue(self.are_files_equal('translator_hello_world.log', 'log/translator/test_hello_world/test_hello_world.log'))
+            self.assertTrue(self.are_files_equal('golden/translator_hello_world.log', 'log/translator/hello_world_logger/hello_world_logger.log'))
 
     def test_prob1(self):
+        prob1_logger = configure_logger(logging_level=logging.INFO, logger_name="prob1_logger")
+
         with tempfile.TemporaryDirectory() as tmpdir:
             target_file_path = os.path.join(tmpdir, 'program.lab')
-            translator_main('examples/prob1.forth', target_file_path, 'test_prob1')
+            translator_main('examples/prob1.forth', target_file_path, prob1_logger)
 
-            self.assertTrue(self.are_files_equal('translator_prob1.log', 'log/translator/test_prob1/test_prob1.log'))
+            self.assertTrue(self.are_files_equal('golden/translator_prob1.log', 'log/translator/prob1_logger/prob1_logger.log'))

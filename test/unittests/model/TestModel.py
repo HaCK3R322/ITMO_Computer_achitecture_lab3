@@ -1,18 +1,21 @@
 import json
+import logging
 import unittest
 import unittest
 import tempfile
 import os
 import shutil
 from src.model import Simulation
+from src.model import configure_logger
 
 
 class TestModel(unittest.TestCase):
     def setUp(self):
         print(self._testMethodDoc)
+        self.logger = configure_logger(logging_level=logging.INFO, logger_name="test_model_logger") 
 
     def test_stack_operations(self):
-        simulation = Simulation()
+        simulation = Simulation(self.logger)
         simulation.cu.need_print_state = False
 
         simulation.cu.stack.push(1)
@@ -33,7 +36,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(simulation.cu.stack.get_next(), 1)
 
     def test_arithmetic_operations(self):
-        simulation = Simulation()
+        simulation = Simulation(self.logger)
         simulation.cu.need_print_state = False
 
         simulation.cu.stack.push(27)
@@ -52,7 +55,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(simulation.cu.stack.tos, 3)
 
     def test_rstack_operations(self):
-        simulation = Simulation()
+        simulation = Simulation(self.logger)
         simulation.cu.need_print_state = False
 
         simulation.cu.stack.push(1)
@@ -73,7 +76,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(simulation.cu.rstack.tos, 3)
 
     def test_cmp(self):
-        simulation = Simulation()
+        simulation = Simulation(self.logger)
         simulation.cu.need_print_state = False
 
         simulation.cu.stack.push(2)
@@ -95,7 +98,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(simulation.cu.nf, False)
 
     def test_sum_overflow(self):
-        simulation = Simulation()
+        simulation = Simulation(self.logger)
         simulation.cu.need_print_state = False
 
         simulation.cu.stack.push(0xFF)
