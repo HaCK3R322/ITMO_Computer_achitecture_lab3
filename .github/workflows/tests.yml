@@ -19,7 +19,7 @@ jobs:
 
     - name: run TRANSLATOR unit tests
       run: |
-        python -m unittest -v -b -s test/unittests/translator/ TestTranslator.py
+        python -m unittest discover -v -b -s test/unittests/translator/ -p 'Test*.py'
 #
 #    - name: run MODEL unit tests
 #      run: |
