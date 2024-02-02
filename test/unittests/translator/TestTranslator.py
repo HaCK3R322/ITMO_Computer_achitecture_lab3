@@ -9,8 +9,8 @@ class TestTranslator(unittest.TestCase):
         self.instructions_start_address = 0x00C0
 
     def test_void(self):
-        with open('void/source.forth') as source_file:
-            with open('void/expected.lab') as expected_file:
+        with open('./void/source.forth') as source_file:
+            with open('./void/expected.lab') as expected_file:
                 source = source_file.read()
                 translator = Translator(source)
                 translator.translate()
