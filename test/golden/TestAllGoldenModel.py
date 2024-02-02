@@ -13,6 +13,7 @@ class TestAllGoldenModel(unittest.TestCase):
         print(self._testMethodDoc)
         self.maxDiff = None
 
+
     def are_files_equal(self, file1_path, file2_path):
         with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
             for line1, line2 in zip(file1, file2):
