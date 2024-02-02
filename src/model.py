@@ -180,6 +180,7 @@ class ControlUnit:
         self.nf = False
 
         self.ticks = 0
+        self.need_print_state = True
 
     def get_stack_str(self, stack):
         a = stack.sp - 3 if stack.sp - 3 > -1 else 999999
@@ -210,7 +211,8 @@ class ControlUnit:
 
     def tick(self, instruction_name):
         self.ticks += 1
-        logging.log(logging.DEBUG, self.get_state_str(instruction_name))
+        if self.need_print_state:
+            logging.log(logging.DEBUG, self.get_state_str(instruction_name))
 
     def latch_pc_low_bits(self, address_low_bits):
         assert 0x00 <= address_low_bits <= 0xFF, f'INSTRUCTION MEMORY: address low bits {hex(address_low_bits)} out of bounds'
@@ -281,17 +283,17 @@ class ControlUnit:
         sign_b = b & sign_mask
 
         if a == b:
-            self.zf = 1
+            self.zf = True
         else:
-            self.zf = 0
+            self.zf = False
 
         if sign_a and not sign_b:
-            self.nf = 1  # Set Negative Flag if a is negative and b is positive
+            self.nf = True  # Set Negative Flag if a is negative and b is positive
         elif not sign_a and sign_b:
-            self.nf = 0  # Clear Negative Flag if a is positive and b is negative
+            self.nf = False  # Clear Negative Flag if a is positive and b is negative
         else:
             # Both numbers have the same sign, compare magnitudes
-            self.nf = 1 if a < b else 0
+           self.nf = True if a < b else 0
 
         self.tick("CMP")
 
@@ -716,12 +718,15 @@ class Simulation:
     def execute(self):
         self.cu.execute(self.cu.decoder.opcode)
 
+    def increment_program_counter(self):
+        self.cu.pc += 1
+
     def simulate(self):
         while True:
             self.instruction_fetch()
             self.decode()
             self.execute()
-            self.cu.pc += 1
+            self.increment_program_counter()
 
 
 def configure_logger(logging_level):
