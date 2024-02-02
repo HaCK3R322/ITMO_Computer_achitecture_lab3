@@ -21,9 +21,9 @@ jobs:
       run: |
         python -m unittest -v -b test/unittests/translator/TestTranslator.py 
 
-#    - name: run MODEL unit tests
-#      run: |
-#        python -m unittest -v -b test/unittests/model/TestModel.py
+    - name: run MODEL unit tests
+      run: |
+        python -m unittest -v -b test/unittests/model/TestModel.py
 #
 #    - name: run golden tests TRANSLATOR
 #      run: |
