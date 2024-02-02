@@ -1,8 +1,9 @@
 import logging
-import unittest
 import tempfile
 import os
 import shutil
+import unittest
+
 from src.model import main as model_main
 from src.translatorv2 import main as translator_main
 

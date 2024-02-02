@@ -898,11 +898,13 @@ class Translator:
         return True
 
 
-def configure_logger(logging_level):
+def configure_logger(logging_level, logfile_name=None):
     # Set the logging level for the root logger
     logging.basicConfig(level=logging_level, handlers=[])
 
     log_folder = 'log/translator'
+    if logfile_name is not None:
+        log_folder += '/' + logfile_name
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
     os.makedirs(log_folder)
@@ -910,8 +912,9 @@ def configure_logger(logging_level):
     # Set the maximum log file size
     log_file_max_size = 50 * 1024 * 1024  # 50 MB
 
+    logfile_path = os.path.join(log_folder, 'tranlator.log' if logfile_name is None else logfile_name + '.log')
     # Create a rotating file handler
-    file_handler = RotatingFileHandler(os.path.join(log_folder, 'translator.log'), maxBytes=log_file_max_size,
+    file_handler = RotatingFileHandler(logfile_path, maxBytes=log_file_max_size,
                                        backupCount=999)
     file_handler.setLevel(logging_level)
 
@@ -923,8 +926,8 @@ def configure_logger(logging_level):
     logging.getLogger().addHandler(file_handler)
 
 
-def main(source_path, output_path):
-    configure_logger(logging_level=logging.INFO)
+def main(source_path, output_path, logfile_name=None):
+    configure_logger(logging_level=logging.INFO, logfile_name=logfile_name)
 
     with open(source_path, "r", encoding="utf-8") as source_file:
         source_code = source_file.read()
@@ -949,6 +952,7 @@ def main(source_path, output_path):
             logging.info(f'TRANSLATION SYNTAX ERROR: {syntax_error}')
             raise syntax_error
 
+    logging.getLogger().handlers[0].flush()
     logging.shutdown()
 
 

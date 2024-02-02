@@ -1,69 +1,357 @@
 code_hello_world: |-
-  72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+  :print_str
+      variable string_address_high string_address_high !
+      variable string_address_low string_address_low !
+      variable i 1 i !
+
+      string_address_low @ string_address_high @ @ if
+          begin
+              0 string_address_low @ string_address_high @
+              0 0 i @ t+ @ .                                                      # i += 1
+              drop
+
+              i @ 1 + i !
+
+              string_address_low @ string_address_high @ @                        # get len
+              i @ 1 -
+              =                                                                   # i == str_len - 1 ?
+          until
+      then
+  ;
+
+  "Hello" print_str
+  " world!" print_str
 output_hello_world: |
   SOURCE CODE:
-  72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+  :print_str
+      variable string_address_high string_address_high !
+      variable string_address_low string_address_low !
+      variable i 1 i !
+  
+      string_address_low @ string_address_high @ @ if
+          begin
+              0 string_address_low @ string_address_high @
+              0 0 i @ t+ @ .                                                      # i += 1
+              drop
+  
+              i @ 1 + i !
+  
+              string_address_low @ string_address_high @ @                        # get len
+              i @ 1 -
+              =                                                                   # i == str_len - 1 ?
+          until
+      then
+  ;
+  
+  "Hello" print_str
+  " world!" print_str
   
   ===== translation start =====
-  TRANSLATION (0): token: 72
-  TRANSLATION (1): token: .
-  TRANSLATION (2): token: 101
-  TRANSLATION (3): token: .
-  TRANSLATION (4): token: 108
-  TRANSLATION (5): token: .
-  TRANSLATION (6): token: 108
-  TRANSLATION (7): token: .
-  TRANSLATION (8): token: 111
-  TRANSLATION (9): token: .
-  TRANSLATION (10): token: 32
-  TRANSLATION (11): token: .
-  TRANSLATION (12): token: 119
-  TRANSLATION (13): token: .
-  TRANSLATION (14): token: 111
-  TRANSLATION (15): token: .
-  TRANSLATION (16): token: 114
-  TRANSLATION (17): token: .
-  TRANSLATION (18): token: 108
-  TRANSLATION (19): token: .
-  TRANSLATION (20): token: 100
-  TRANSLATION (21): token: .
-  TRANSLATION (22): token: 33
-  TRANSLATION (23): token: .
-  Len instructions: 25; Len data: 11
+  Writing to table LOAD table offset 0: imem[0000] = 07
+  Writing to table LOAD table offset 0: imem[0001] = F6
+  Writing to table LOAD table offset 1: imem[0002] = 07
+  Writing to table LOAD table offset 1: imem[0003] = F7
+  Writing to table LOAD table offset 2: imem[0004] = 07
+  Writing to table LOAD table offset 2: imem[0005] = F8
+  Writing to table LOAD table offset 3: imem[0006] = 07
+  Writing to table LOAD table offset 3: imem[0007] = F9
+  Writing to table LOAD table offset 4: imem[0008] = 07
+  Writing to table LOAD table offset 4: imem[0009] = FA
+  Writing to table LOAD table offset 5: imem[000A] = 07
+  Writing to table LOAD table offset 5: imem[000B] = FB
+  Writing to table LOAD table offset 6: imem[000C] = 07
+  Writing to table LOAD table offset 6: imem[000D] = FC
+  Writing to table LOAD table offset 7: imem[000E] = 07
+  Writing to table LOAD table offset 7: imem[000F] = FD
+  Writing to table LOAD table offset 8: imem[0010] = 07
+  Writing to table LOAD table offset 8: imem[0011] = FE
+  Writing to table LOAD table offset 9: imem[0012] = 07
+  Writing to table LOAD table offset 9: imem[0013] = FF
+  tokenized: [':PRINT_STR', 'VARIABLE', 'STRING_ADDRESS_HIGH', 'STRING_ADDRESS_HIGH', '!', 'VARIABLE', 'STRING_ADDRESS_LOW', 'STRING_ADDRESS_LOW', '!', 'VARIABLE', 'I', '1', 'I', '!', 'STRING_ADDRESS_LOW', '@', 'STRING_ADDRESS_HIGH', '@', '@', 'IF', 'BEGIN', '0', 'STRING_ADDRESS_LOW', '@', 'STRING_ADDRESS_HIGH', '@', '0', '0', 'I', '@', 'T+', '@', '.', 'DROP', 'I', '@', '1', '+', 'I', '!', 'STRING_ADDRESS_LOW', '@', 'STRING_ADDRESS_HIGH', '@', '@', 'I', '@', '1', '-', '=', 'UNTIL', 'THEN', ';', '"Hello"', 'PRINT_STR', '" world!"', 'PRINT_STR']
+  Assigning to variable with address 0x0E00 name PRINT_STR.STRING_ADDRESS_HIGH
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction SET (function PRINT_STR) (token '!')
+  Assigning to variable with address 0x0E01 name PRINT_STR.STRING_ADDRESS_LOW
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction SET (function PRINT_STR) (token '!')
+  Assigning to variable with address 0x0E02 name PRINT_STR.I
+  Appending instruction FALSE (function PRINT_STR) (token '1')
+  Appending instruction INC (function PRINT_STR) (token '1')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction SWAP (function PRINT_STR) (token 'I')
+  Appending instruction SET (function PRINT_STR) (token '!')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction FALSE (function PRINT_STR) (token 'IF')
+  Appending instruction CMP (function PRINT_STR) (token 'IF')
+  Appending instruction DROP (function PRINT_STR) (token 'IF')
+  Appending instruction DROP (function PRINT_STR) (token 'IF')
+  Appending instruction JZ (function PRINT_STR) (token 'IF')
+  Appending instruction JMPR (function PRINT_STR) (token 'IF')
+  Appending instruction JMPA (function PRINT_STR) (token 'IF')
+  Appending instruction FALSE (function PRINT_STR) (token '0')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction FALSE (function PRINT_STR) (token '0')
+  Appending instruction FALSE (function PRINT_STR) (token '0')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction SWAP (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction TOR (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction TOR (function PRINT_STR) (token 'T+')
+  Appending instruction SUM (function PRINT_STR) (token 'T+')
+  Appending instruction JO (function PRINT_STR) (token 'T+')
+  Appending instruction JMPR (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction INC (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction JO (function PRINT_STR) (token 'T+')
+  Appending instruction JMPR (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction INC (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction RFROM (function PRINT_STR) (token 'T+')
+  Appending instruction SUM (function PRINT_STR) (token 'T+')
+  Appending instruction JO (function PRINT_STR) (token 'T+')
+  Appending instruction JMPR (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction INC (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction RFROM (function PRINT_STR) (token 'T+')
+  Appending instruction SUM (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction ROT (function PRINT_STR) (token 'T+')
+  Appending instruction SWAP (function PRINT_STR) (token 'T+')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction PRINT (function PRINT_STR) (token '.')
+  Appending instruction DROP (function PRINT_STR) (token 'DROP')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction SWAP (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction FALSE (function PRINT_STR) (token '1')
+  Appending instruction INC (function PRINT_STR) (token '1')
+  Appending instruction SUM (function PRINT_STR) (token '+')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction SWAP (function PRINT_STR) (token 'I')
+  Appending instruction SET (function PRINT_STR) (token '!')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_LOW')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction LOAD (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction OVER (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction INC (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction ROT (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction SWAP (function PRINT_STR) (token 'STRING_ADDRESS_HIGH')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction LOAD (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction OVER (function PRINT_STR) (token 'I')
+  Appending instruction INC (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction ROT (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token 'I')
+  Appending instruction SWAP (function PRINT_STR) (token 'I')
+  Appending instruction GET (function PRINT_STR) (token '@')
+  Appending instruction FALSE (function PRINT_STR) (token '1')
+  Appending instruction INC (function PRINT_STR) (token '1')
+  Appending instruction SUB (function PRINT_STR) (token '-')
+  Appending instruction CMP (function PRINT_STR) (token '=')
+  Appending instruction JZ (function PRINT_STR) (token '=')
+  Appending instruction DROP (function PRINT_STR) (token '=')
+  Appending instruction DROP (function PRINT_STR) (token '=')
+  Appending instruction FALSE (function PRINT_STR) (token '=')
+  Appending instruction JMPR (function PRINT_STR) (token '=')
+  Appending instruction DROP (function PRINT_STR) (token '=')
+  Appending instruction DROP (function PRINT_STR) (token '=')
+  Appending instruction TRUE (function PRINT_STR) (token '=')
+  Pre-processing UNTIL token inside of function PRINT_STR: 
+       relative JMPA address = 72 (0x0048)
+  Appending instruction FALSE (function PRINT_STR) (token 'UNTIL')
+  Appending instruction CMP (function PRINT_STR) (token 'UNTIL')
+  Appending instruction DROP (function PRINT_STR) (token 'UNTIL')
+  Appending instruction DROP (function PRINT_STR) (token 'UNTIL')
+  Appending instruction JZ (function PRINT_STR) (token 'UNTIL')
+  Appending instruction JMPR (function PRINT_STR) (token 'UNTIL')
+  Appending instruction JMPA (function PRINT_STR) (token 'UNTIL')
+  self.data[0800] = 11
+  Appending instruction LOAD
+  Appending instruction LOAD
+  Appending instruction GET
+  self.data[0801] = 00
+  Appending instruction LOAD
+  Appending instruction LOAD
+  Appending instruction INC
+  Appending instruction GET
+  Appending instruction CALL
+  self.data[0802] = 11
+  Appending instruction LOAD
+  Appending instruction LOAD
+  Appending instruction INC
+  Appending instruction INC
+  Appending instruction GET
+  self.data[0803] = 06
+  Appending instruction LOAD
+  Appending instruction LOAD
+  Appending instruction INC
+  Appending instruction INC
+  Appending instruction INC
+  Appending instruction GET
+  Appending instruction CALL
+  Appending instruction HLT
+  Appending instruction RET (function PRINT_STR)
+  Function PRINT_STR assigned start: 00D5 = 21 + 192 -> 0xD4
+  Writing to table CALL table offset 0: imem[0040] = 00
+  Writing to table CALL table offset 0: imem[0041] = D4
+  Post-processing UNTIL token inside of function PRINT_STR: 
+      absolute JMPA: address = 011d
+  Writing to table JMPA table offset 0: imem[0080] = 01
+  Writing to table JMPA table offset 0: imem[0081] = 1D
+  Writing to table JMPA table offset 1: imem[0082] = 01
+  Writing to table JMPA table offset 1: imem[0083] = C5
   ===== translation end =====
   
-  
-  Translated code:
-  {'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index': 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'address': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 2057, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]}
-  
-  PUSH 0x802
-  PRINT
-  PUSH 0x803
-  PRINT
-  PUSH 0x804
-  PRINT
-  PUSH 0x804
-  PRINT
-  PUSH 0x805
-  PRINT
-  PUSH 0x806
-  PRINT
-  PUSH 0x807
-  PRINT
-  PUSH 0x805
-  PRINT
-  PUSH 0x808
-  PRINT
-  PUSH 0x804
-  PRINT
-  PUSH 0x809
-  PRINT
-  PUSH 0x80a
-  PRINT
-  HLT
-  
-  
-  [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]
+  Total number of translated instructions: 263
 code_cat: |-
   variable str_ptr
   ACCEPT str_ptr !

@@ -1,0 +1,62 @@
+SOURCE CODE:
+read
+
+begin
+    read .
+    1 - dup 0 =
+until
+
+
+===== translation start =====
+Writing to table LOAD table offset 0: imem[0000] = 07
+Writing to table LOAD table offset 0: imem[0001] = F6
+Writing to table LOAD table offset 1: imem[0002] = 07
+Writing to table LOAD table offset 1: imem[0003] = F7
+Writing to table LOAD table offset 2: imem[0004] = 07
+Writing to table LOAD table offset 2: imem[0005] = F8
+Writing to table LOAD table offset 3: imem[0006] = 07
+Writing to table LOAD table offset 3: imem[0007] = F9
+Writing to table LOAD table offset 4: imem[0008] = 07
+Writing to table LOAD table offset 4: imem[0009] = FA
+Writing to table LOAD table offset 5: imem[000A] = 07
+Writing to table LOAD table offset 5: imem[000B] = FB
+Writing to table LOAD table offset 6: imem[000C] = 07
+Writing to table LOAD table offset 6: imem[000D] = FC
+Writing to table LOAD table offset 7: imem[000E] = 07
+Writing to table LOAD table offset 7: imem[000F] = FD
+Writing to table LOAD table offset 8: imem[0010] = 07
+Writing to table LOAD table offset 8: imem[0011] = FE
+Writing to table LOAD table offset 9: imem[0012] = 07
+Writing to table LOAD table offset 9: imem[0013] = FF
+tokenized: ['READ', 'BEGIN', 'READ', '.', '1', '-', 'DUP', '0', '=', 'UNTIL']
+Appending instruction READ
+Appending instruction READ
+Appending instruction PRINT
+Appending instruction FALSE
+Appending instruction INC
+Appending instruction SUB
+Appending instruction DUP
+Appending instruction FALSE
+Appending instruction CMP
+Appending instruction JZ
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction FALSE
+Appending instruction JMPR
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction TRUE
+Processing UNTIL token outside of any function
+Writing to table JMPA table offset 0: imem[0080] = 00
+Writing to table JMPA table offset 0: imem[0081] = C0
+Appending instruction FALSE
+Appending instruction CMP
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction JZ
+Appending instruction JMPR
+Appending instruction JMPA
+Appending instruction HLT
+===== translation end =====
+
+Total number of translated instructions: 25
