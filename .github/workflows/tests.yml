@@ -29,9 +29,9 @@ jobs:
       run: |
         python -m unittest -v -b test/golden/TestAllGoldenTranslator.py
 
-#    - name: run golden tests MODEL
-#      run: |
-#        python -m unittest -v -b test/golden/TestAllGoldenModel.py
+    - name: run golden tests MODEL
+      run: |
+        python -m unittest -v -b test/golden/TestAllGoldenModel.py
 #
 #    - name: run integrational tests
 #      run: |
