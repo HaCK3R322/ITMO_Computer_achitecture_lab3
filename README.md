@@ -4,7 +4,7 @@ Translator + Processor
 # Forth. Транслятор и модель
 
 - Андросов Иван Сергеевич P33111.
-- `forth | stack | harv | hw | tick | struct | stream | port | prob1`
+- `forth | stack | harv | hw | tick | struct | stream | port | pstr | prob1 | 8bit`
 
 
 ## Язык программирования
