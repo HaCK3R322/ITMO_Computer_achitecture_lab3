@@ -1,7 +1,6 @@
 import logging
 import tempfile
 import os
-import shutil
 import unittest
 
 from src.translatorv2 import main as translator_main

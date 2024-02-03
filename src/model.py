@@ -837,6 +837,6 @@ if __name__ == '__main__':
     output_filepath = sys.argv[3]
     logging_level_arg = sys.argv[4]
 
-    model_debug_level = logging.debug if logging_level_arg != "info" else logging.INFO
+    model_debug_level = logging.DEBUG if logging_level_arg != "info" else logging.INFO
 
-    main(source_code_path_arg, input_filepath_arg, output_filepath, logging_level=logging.INFO)
+    main(source_code_path_arg, input_filepath_arg, output_filepath, logging_level=model_debug_level)

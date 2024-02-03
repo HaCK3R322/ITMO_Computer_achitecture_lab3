@@ -320,15 +320,16 @@ Decoder:
 
 ## Апробация
 
-В качестве тестов использовано три алгоритма:
+В качестве тестов использовано 4 алгоритма:
 
-1. вывод 'Hello world!'
-2. подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
-3. программа `cat`, повторяем ввод на выводе.
+1. программа `cat`, повторяем ввод на выводе.
+2. вывод 'Hello world!'
+3. подсчет и вывод суммы всех натуральных чисел от 1 до 999 включительно являющихся делителями 3 и/или 5
+4. программа `hello_user_name` -- спросить юзернейм и вывести приветствие с именем
 
 Интеграционные тесты реализованы тут: [test](./test) в трех вариантах:
 
-- Golden Tests (проверка стандартного вывода программ)
+- Golden Tests (проверка логов программ)
 - Unit Tests (проверка отдельных частей кода)
 - Integration Test (проверка как разные кодовые базы взаимодействуют между собой)
 
@@ -347,414 +348,455 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
          python -m pip install --upgrade pip
          pip install -r requirements.txt
-        
-    - name: test translator
-      run: |
-        python -m unittest -v -b test/unittests/TestTranslator.py 
 
-    - name: test simulation
+    - name: run TRANSLATOR unit tests
       run: |
-        python -m unittest -v -b test/unittests/TestSimulation.py 
+        python -m unittest -v -b test/unittests/translator/TestTranslator.py 
 
-    - name: test golden tests
+    - name: run MODEL unit tests
       run: |
-        pytest 
+        python -m unittest -v -b test/unittests/model/TestModel.py
 
-    - name: test integration
+    - name: run golden tests TRANSLATOR
       run: |
-        python -m unittest -v -b test/integrational/TestAll.py 
+        python -m unittest -v -b test/golden/TestAllGoldenTranslator.py
+
+    - name: run golden tests MODEL
+      run: |
+        python -m unittest -v -b test/golden/TestAllGoldenModel.py
+
+    - name: run integrational tests
+      run: |
+        python -m unittest -v -b test/integrational/TestAll.py
 
 ```
 
-Пример использования и журнал работы процессора на примере `hello world`:
+Пример использования и журнал работы процессора на примере `cat`:
 
 ``` console
-> cat hello_world.forth
-72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
-> python src/translator.py hello_world.forth
+> cat cat.forth
+read
+
+begin
+    read .
+    1 - dup 0 =
+until
+> python source.forth program.lab
+> cat src/log/translator/default_translator_logger/default_translator_logger.log
 SOURCE CODE:
-72 . 101 . 108 . 108 . 111 . 32 . 119 . 111 . 114 . 108 . 100 . 33 .
+read
+
+begin
+    read .
+    1 - dup 0 =
+until
 
 ===== translation start =====
-TRANSLATION (0): token: 72
-TRANSLATION (1): token: .
-TRANSLATION (2): token: 101
-TRANSLATION (3): token: .
-TRANSLATION (4): token: 108
-TRANSLATION (5): token: .
-TRANSLATION (6): token: 108
-TRANSLATION (7): token: .
-TRANSLATION (8): token: 111
-TRANSLATION (9): token: .
-TRANSLATION (10): token: 32
-TRANSLATION (11): token: .
-TRANSLATION (12): token: 119
-TRANSLATION (13): token: .
-TRANSLATION (14): token: 111
-TRANSLATION (15): token: .
-TRANSLATION (16): token: 114
-TRANSLATION (17): token: .
-TRANSLATION (18): token: 108
-TRANSLATION (19): token: .
-TRANSLATION (20): token: 100
-TRANSLATION (21): token: .
-TRANSLATION (22): token: 33
-TRANSLATION (23): token: .
-Len instructions: 25; Len data: 11
+Writing to table LOAD table offset 0: imem[0000] = 07
+Writing to table LOAD table offset 0: imem[0001] = F6
+Writing to table LOAD table offset 1: imem[0002] = 07
+Writing to table LOAD table offset 1: imem[0003] = F7
+Writing to table LOAD table offset 2: imem[0004] = 07
+Writing to table LOAD table offset 2: imem[0005] = F8
+Writing to table LOAD table offset 3: imem[0006] = 07
+Writing to table LOAD table offset 3: imem[0007] = F9
+Writing to table LOAD table offset 4: imem[0008] = 07
+Writing to table LOAD table offset 4: imem[0009] = FA
+Writing to table LOAD table offset 5: imem[000A] = 07
+Writing to table LOAD table offset 5: imem[000B] = FB
+Writing to table LOAD table offset 6: imem[000C] = 07
+Writing to table LOAD table offset 6: imem[000D] = FC
+Writing to table LOAD table offset 7: imem[000E] = 07
+Writing to table LOAD table offset 7: imem[000F] = FD
+Writing to table LOAD table offset 8: imem[0010] = 07
+Writing to table LOAD table offset 8: imem[0011] = FE
+Writing to table LOAD table offset 9: imem[0012] = 07
+Writing to table LOAD table offset 9: imem[0013] = FF
+tokenized: ['READ', 'BEGIN', 'READ', '.', '1', '-', 'DUP', '0', '=', 'UNTIL']
+Appending instruction READ
+Appending instruction READ
+Appending instruction PRINT
+Appending instruction FALSE
+Appending instruction INC
+Appending instruction SUB
+Appending instruction DUP
+Appending instruction FALSE
+Appending instruction CMP
+Appending instruction JZ
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction FALSE
+Appending instruction JMPR
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction TRUE
+Processing UNTIL token outside of any function
+Writing to table JMPA table offset 0: imem[0080] = 00
+Writing to table JMPA table offset 0: imem[0081] = C0
+Appending instruction FALSE
+Appending instruction CMP
+Appending instruction DROP
+Appending instruction DROP
+Appending instruction JZ
+Appending instruction JMPR
+Appending instruction JMPA
+Appending instruction HLT
 ===== translation end =====
 
+Total number of translated instructions: 25
 
-Translated code:
-{'instructions': [{'opcode': 'PUSH', 'address': 2050, 'related_token_index': 0}, {'opcode': 'PRINT', 'related_token_index': 1}, {'opcode': 'PUSH', 'address': 2051, 'related_token_index': 2}, {'opcode': 'PRINT', 'related_token_index': 3}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 4}, {'opcode': 'PRINT', 'related_token_index': 5}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 6}, {'opcode': 'PRINT', 'related_token_index': 7}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 8}, {'opcode': 'PRINT', 'related_token_index': 9}, {'opcode': 'PUSH', 'address': 2054, 'related_token_index': 10}, {'opcode': 'PRINT', 'related_token_index': 11}, {'opcode': 'PUSH', 'address': 2055, 'related_token_index': 12}, {'opcode': 'PRINT', 'related_token_index': 13}, {'opcode': 'PUSH', 'address': 2053, 'related_token_index': 14}, {'opcode': 'PRINT', 'related_token_index': 15}, {'opcode': 'PUSH', 'address': 2056, 'related_token_index': 16}, {'opcode': 'PRINT', 'related_token_index': 17}, {'opcode': 'PUSH', 'address': 2052, 'related_token_index': 18}, {'opcode': 'PRINT', 'related_token_index': 19}, {'opcode': 'PUSH', 'address': 2057, 'related_token_index': 20}, {'opcode': 'PRINT', 'related_token_index': 21}, {'opcode': 'PUSH', 'address': 2058, 'related_token_index': 22}, {'opcode': 'PRINT', 'related_token_index': 23}, {'opcode': 'HLT'}], 'data': [-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]}
+> python machine.py progam.lab input.txt output.txt debug
+Original input: "Hello world!"
+Reversed input buffer:
+    0: 33
+    1: 100
+    2: 108
+    3: 114
+    4: 111
+    5: 119
+    6: 32
+    7: 111
+    8: 108
+    9: 108
+    10: 101
+    11: 72
+    12: 12
+]
 
-PUSH 0x802
-PRINT
-PUSH 0x803
-PRINT
-PUSH 0x804
-PRINT
-PUSH 0x804
-PRINT
-PUSH 0x805
-PRINT
-PUSH 0x806
-PRINT
-PUSH 0x807
-PRINT
-PUSH 0x805
-PRINT
-PUSH 0x808
-PRINT
-PUSH 0x804
-PRINT
-PUSH 0x809
-PRINT
-PUSH 0x80a
-PRINT
-HLT
+Not void imem:
+0x0000 | 0x0007
+0x0001 | 0x00F6
+0x0002 | 0x0007
+0x0003 | 0x00F7
+0x0004 | 0x0007
+0x0005 | 0x00F8
+0x0006 | 0x0007
+0x0007 | 0x00F9
+0x0008 | 0x0007
+0x0009 | 0x00FA
+0x000A | 0x0007
+0x000B | 0x00FB
+0x000C | 0x0007
+0x000D | 0x00FC
+0x000E | 0x0007
+0x000F | 0x00FD
+0x0010 | 0x0007
+0x0011 | 0x00FE
+0x0012 | 0x0007
+0x0013 | 0x00FF
+0x0081 | 0x00C0
+0x00C0 | READ
+0x00C1 | READ
+0x00C2 | PRINT
+0x00C3 | FALSE
+0x00C4 | INC
+0x00C5 | SUB
+0x00C6 | DUP
+0x00C7 | FALSE
+0x00C8 | CMP
+0x00C9 | JZ
+0x00CA | DROP
+0x00CB | DROP
+0x00CC | FALSE
+0x00CD | JMPR
+0x00CE | DROP
+0x00CF | DROP
+0x00D0 | TRUE
+0x00D1 | FALSE
+0x00D2 | CMP
+0x00D3 | DROP
+0x00D4 | DROP
+0x00D5 | JZ
+0x00D6 | JMPR
+0x00D7 | JMPA
+0x00D8 | HLT
 
+=== Simulation start ===
+tick      1: STACK(sp==0xFFFF): |                    , 0x0C|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c0     PC: 0x00c0     rel_inst_index: 0 (READ, READ)
+tick      2: STACK(sp==0x0000): |               0x0C , 0x48|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick      3: STACK(sp==0xFFFF): |                    , 0x0C|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick      4: STACK(sp==0x0000): |               0x0C , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick      5: STACK(sp==0x0000): |               0x0C , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick      6: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick      7: STACK(sp==0x0000): |               0x0B , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick      8: STACK(sp==0x0001): |          0x0B 0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick      9: STACK(sp==0x0001): |          0x0B 0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick     10: STACK(sp==0x0000): |               0x0B , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick     11: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick     12: STACK(sp==0x0000): |               0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick     13: STACK(sp==0x0000): |               0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick     14: STACK(sp==0x0001): |          0x0B      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick     15: STACK(sp==0x0001): |          0x0B      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick     16: STACK(sp==0x0000): |               0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick     17: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick     18: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick     19: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     20: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     21: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     22: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick     23: STACK(sp==0x0000): |               0x0B , 0x65|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick     24: STACK(sp==0xFFFF): |                    , 0x0B|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick     25: STACK(sp==0x0000): |               0x0B , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick     26: STACK(sp==0x0000): |               0x0B , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick     27: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick     28: STACK(sp==0x0000): |               0x0A , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick     29: STACK(sp==0x0001): |          0x0A 0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick     30: STACK(sp==0x0001): |          0x0A 0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick     31: STACK(sp==0x0000): |               0x0A , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick     32: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick     33: STACK(sp==0x0000): |               0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick     34: STACK(sp==0x0000): |               0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick     35: STACK(sp==0x0001): |          0x0A      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick     36: STACK(sp==0x0001): |          0x0A      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick     37: STACK(sp==0x0000): |               0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick     38: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick     39: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick     40: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     41: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     42: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     43: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick     44: STACK(sp==0x0000): |               0x0A , 0x6C|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick     45: STACK(sp==0xFFFF): |                    , 0x0A|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick     46: STACK(sp==0x0000): |               0x0A , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick     47: STACK(sp==0x0000): |               0x0A , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick     48: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick     49: STACK(sp==0x0000): |               0x09 , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick     50: STACK(sp==0x0001): |          0x09 0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick     51: STACK(sp==0x0001): |          0x09 0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick     52: STACK(sp==0x0000): |               0x09 , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick     53: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick     54: STACK(sp==0x0000): |               0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick     55: STACK(sp==0x0000): |               0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick     56: STACK(sp==0x0001): |          0x09      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick     57: STACK(sp==0x0001): |          0x09      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick     58: STACK(sp==0x0000): |               0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick     59: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick     60: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick     61: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     62: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     63: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     64: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick     65: STACK(sp==0x0000): |               0x09 , 0x6C|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick     66: STACK(sp==0xFFFF): |                    , 0x09|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick     67: STACK(sp==0x0000): |               0x09 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick     68: STACK(sp==0x0000): |               0x09 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick     69: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick     70: STACK(sp==0x0000): |               0x08 , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick     71: STACK(sp==0x0001): |          0x08 0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick     72: STACK(sp==0x0001): |          0x08 0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick     73: STACK(sp==0x0000): |               0x08 , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick     74: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick     75: STACK(sp==0x0000): |               0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick     76: STACK(sp==0x0000): |               0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick     77: STACK(sp==0x0001): |          0x08      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick     78: STACK(sp==0x0001): |          0x08      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick     79: STACK(sp==0x0000): |               0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick     80: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick     81: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick     82: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     83: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     84: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick     85: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick     86: STACK(sp==0x0000): |               0x08 , 0x6F|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick     87: STACK(sp==0xFFFF): |                    , 0x08|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick     88: STACK(sp==0x0000): |               0x08 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick     89: STACK(sp==0x0000): |               0x08 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick     90: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick     91: STACK(sp==0x0000): |               0x07 , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick     92: STACK(sp==0x0001): |          0x07 0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick     93: STACK(sp==0x0001): |          0x07 0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick     94: STACK(sp==0x0000): |               0x07 , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick     95: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick     96: STACK(sp==0x0000): |               0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick     97: STACK(sp==0x0000): |               0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick     98: STACK(sp==0x0001): |          0x07      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick     99: STACK(sp==0x0001): |          0x07      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    100: STACK(sp==0x0000): |               0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    101: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    102: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    103: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    104: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    105: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    106: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    107: STACK(sp==0x0000): |               0x07 , 0x20|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    108: STACK(sp==0xFFFF): |                    , 0x07|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    109: STACK(sp==0x0000): |               0x07 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    110: STACK(sp==0x0000): |               0x07 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    111: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    112: STACK(sp==0x0000): |               0x06 , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    113: STACK(sp==0x0001): |          0x06 0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    114: STACK(sp==0x0001): |          0x06 0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    115: STACK(sp==0x0000): |               0x06 , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    116: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    117: STACK(sp==0x0000): |               0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    118: STACK(sp==0x0000): |               0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    119: STACK(sp==0x0001): |          0x06      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    120: STACK(sp==0x0001): |          0x06      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    121: STACK(sp==0x0000): |               0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    122: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    123: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    124: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    125: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    126: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    127: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    128: STACK(sp==0x0000): |               0x06 , 0x77|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    129: STACK(sp==0xFFFF): |                    , 0x06|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    130: STACK(sp==0x0000): |               0x06 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    131: STACK(sp==0x0000): |               0x06 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    132: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    133: STACK(sp==0x0000): |               0x05 , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    134: STACK(sp==0x0001): |          0x05 0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    135: STACK(sp==0x0001): |          0x05 0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    136: STACK(sp==0x0000): |               0x05 , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    137: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    138: STACK(sp==0x0000): |               0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    139: STACK(sp==0x0000): |               0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    140: STACK(sp==0x0001): |          0x05      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    141: STACK(sp==0x0001): |          0x05      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    142: STACK(sp==0x0000): |               0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    143: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    144: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    145: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    146: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    147: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    148: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    149: STACK(sp==0x0000): |               0x05 , 0x6F|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    150: STACK(sp==0xFFFF): |                    , 0x05|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    151: STACK(sp==0x0000): |               0x05 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    152: STACK(sp==0x0000): |               0x05 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    153: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    154: STACK(sp==0x0000): |               0x04 , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    155: STACK(sp==0x0001): |          0x04 0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    156: STACK(sp==0x0001): |          0x04 0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    157: STACK(sp==0x0000): |               0x04 , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    158: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    159: STACK(sp==0x0000): |               0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    160: STACK(sp==0x0000): |               0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    161: STACK(sp==0x0001): |          0x04      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    162: STACK(sp==0x0001): |          0x04      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    163: STACK(sp==0x0000): |               0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    164: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    165: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    166: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    167: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    168: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    169: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    170: STACK(sp==0x0000): |               0x04 , 0x72|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    171: STACK(sp==0xFFFF): |                    , 0x04|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    172: STACK(sp==0x0000): |               0x04 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    173: STACK(sp==0x0000): |               0x04 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    174: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    175: STACK(sp==0x0000): |               0x03 , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    176: STACK(sp==0x0001): |          0x03 0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    177: STACK(sp==0x0001): |          0x03 0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    178: STACK(sp==0x0000): |               0x03 , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    179: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    180: STACK(sp==0x0000): |               0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    181: STACK(sp==0x0000): |               0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    182: STACK(sp==0x0001): |          0x03      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    183: STACK(sp==0x0001): |          0x03      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    184: STACK(sp==0x0000): |               0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    185: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    186: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    187: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    188: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    189: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    190: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    191: STACK(sp==0x0000): |               0x03 , 0x6C|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    192: STACK(sp==0xFFFF): |                    , 0x03|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    193: STACK(sp==0x0000): |               0x03 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    194: STACK(sp==0x0000): |               0x03 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    195: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    196: STACK(sp==0x0000): |               0x02 , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    197: STACK(sp==0x0001): |          0x02 0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    198: STACK(sp==0x0001): |          0x02 0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    199: STACK(sp==0x0000): |               0x02 , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    200: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    201: STACK(sp==0x0000): |               0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    202: STACK(sp==0x0000): |               0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    203: STACK(sp==0x0001): |          0x02      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    204: STACK(sp==0x0001): |          0x02      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    205: STACK(sp==0x0000): |               0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    206: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    207: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    208: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    209: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    210: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    211: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    212: STACK(sp==0x0000): |               0x02 , 0x64|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    213: STACK(sp==0xFFFF): |                    , 0x02|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    214: STACK(sp==0x0000): |               0x02 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    215: STACK(sp==0x0000): |               0x02 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    216: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    217: STACK(sp==0x0000): |               0x01 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    218: STACK(sp==0x0001): |          0x01 0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    219: STACK(sp==0x0001): |          0x01 0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    220: STACK(sp==0x0000): |               0x01 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00ca     PC: 0x00ca     rel_inst_index: 8 (=, DROP)
+tick    221: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cb     PC: 0x00cb     rel_inst_index: 8 (=, DROP)
+tick    222: STACK(sp==0x0000): |               0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cc     PC: 0x00cc     rel_inst_index: 8 (=, FALSE)
+tick    223: STACK(sp==0x0000): |               0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00cd     PC: 0x00d0     rel_inst_index: 8 (=, JMPR)
+tick    224: STACK(sp==0x0001): |          0x01      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    225: STACK(sp==0x0001): |          0x01      , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    226: STACK(sp==0x0000): |               0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    227: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    228: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d5     PC: 0x00d6     rel_inst_index: 9 (UNTIL, JMPR)
+tick    229: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    230: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0080     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    231: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPA)
+tick    232: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x0081     PC: 0x00c0     rel_inst_index: 9 (UNTIL, JMPA)
+tick    233: STACK(sp==0x0000): |               0x01 , 0x21|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c1     PC: 0x00c1     rel_inst_index: 2 (READ, READ)
+tick    234: STACK(sp==0xFFFF): |                    , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c2     PC: 0x00c2     rel_inst_index: 3 (., PRINT)
+tick    235: STACK(sp==0x0000): |               0x01 , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c3     PC: 0x00c3     rel_inst_index: 4 (1, FALSE)
+tick    236: STACK(sp==0x0000): |               0x01 , 0x01|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/0/0     IMEM.ADDR: 0x00c4     PC: 0x00c4     rel_inst_index: 4 (1, INC)
+tick    237: STACK(sp==0xFFFF): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c5     PC: 0x00c5     rel_inst_index: 5 (-, SUB)
+tick    238: STACK(sp==0x0000): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c6     PC: 0x00c6     rel_inst_index: 6 (DUP, DUP)
+tick    239: STACK(sp==0x0001): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c7     PC: 0x00c7     rel_inst_index: 7 (0, FALSE)
+tick    240: STACK(sp==0x0001): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c8     PC: 0x00c8     rel_inst_index: 8 (=, CMP)
+tick    241: STACK(sp==0x0001): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00c9     PC: 0x00cd     rel_inst_index: 8 (=, JMPR)
+tick    242: STACK(sp==0x0000): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00ce     PC: 0x00ce     rel_inst_index: 8 (=, DROP)
+tick    243: STACK(sp==0xFFFF): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00cf     PC: 0x00cf     rel_inst_index: 8 (=, DROP)
+tick    244: STACK(sp==0x0000): |                    , 0xFF|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d0     PC: 0x00d0     rel_inst_index: 8 (=, TRUE)
+tick    245: STACK(sp==0x0001): |               0xFF , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 1/0/0     IMEM.ADDR: 0x00d1     PC: 0x00d1     rel_inst_index: 9 (UNTIL, FALSE)
+tick    246: STACK(sp==0x0001): |               0xFF , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/1/0     IMEM.ADDR: 0x00d2     PC: 0x00d2     rel_inst_index: 9 (UNTIL, CMP)
+tick    247: STACK(sp==0x0000): |                    , 0xFF|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/1/0     IMEM.ADDR: 0x00d3     PC: 0x00d3     rel_inst_index: 9 (UNTIL, DROP)
+tick    248: STACK(sp==0xFFFF): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/1/0     IMEM.ADDR: 0x00d4     PC: 0x00d4     rel_inst_index: 9 (UNTIL, DROP)
+tick    249: STACK(sp==0xFFFF): |                    , 0x00|     RSTACK(sp==65534): |                    ,     |    ZF/NF/OF: 0/1/0     IMEM.ADDR: 0x00d6     PC: 0x00d7     rel_inst_index: 9 (UNTIL, JMPR)
+HLT was raised on tick 249
+=== Simulation end. Ticks: 249. ===
 
-[-1, 0, 72, 101, 108, 111, 32, 119, 114, 100, 33]
+Stack printed:
+-------------
+ TOS   | 0x00  ==  0
 
-Process finished with exit code 0
+Output buffer: [
+    0: H
+    1: e
+    2: l
+    3: l
+    4: o
+    5:  
+    6: w
+    7: o
+    8: r
+    9: l
+    10: d
+    11: !
+]
+Output buffer jointed: "Hello world!"
 
-> cat program.bin 
-{                                   
-    "instructions": [               
-        {                           
-            "opcode": "PUSH",       
-            "address": 2050,        
-            "related_token_index": 0
-        },                          
-        {                           
-            "opcode": "PRINT",      
-            "related_token_index": 1
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2051,
-            "related_token_index": 2
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 3
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2052,
-            "related_token_index": 4
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 5
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2052,
-            "related_token_index": 6
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 7
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2053,
-            "related_token_index": 8
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 9
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2054,
-            "related_token_index": 10
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 11
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2055,
-            "related_token_index": 12
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 13
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2053,
-            "related_token_index": 14
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 15
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2056,
-            "related_token_index": 16
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 17
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2052,
-            "related_token_index": 18
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 19
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2057,
-            "related_token_index": 20
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 21
-        },
-        {
-            "opcode": "PUSH",
-            "address": 2058,
-            "related_token_index": 22
-        },
-        {
-            "opcode": "PRINT",
-            "related_token_index": 23
-        },
-        {
-            "opcode": "HLT"
-        }
-    ],
-    "data": [
-        -1,
-        0,
-        72,
-        101,
-        108,
-        111,
-        32,
-        119,
-        114,
-        100,
-        33
-    ]
-}
-
-> ./machine.py target.out examples/foo_input.txt out.txt
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0001 -> PC: 0x001 | SP: 0x000 | AC: +00000 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 0
-DEBUG:root:tick = 0002 -> PC: 0x001 | SP: 0x000 | AC: +00000 | ALU flags: zf=False nf=False of=False | RAM addr:0x802 ||| related token index: 0
-DEBUG:root:tick = 0003 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf=False nf=False of=False | RAM addr:0x802 ||| related token index: 0
-DEBUG:root:tick = 0004 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 0
-DEBUG:root:tick = 0005 -> PC: 0x001 | SP: 0x000 | AC: +00072 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 0
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0007 -> PC: 0x002 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
-DEBUG:root:tick = 0008 -> PC: 0x002 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
-DEBUG:root:tick = 0009 -> PC: 0x002 | SP: 0x-01 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 1
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0011 -> PC: 0x003 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 2
-DEBUG:root:tick = 0012 -> PC: 0x003 | SP: 0x000 | AC: +00072 | ALU flags: zf= True nf=False of=False | RAM addr:0x803 ||| related token index: 2
-DEBUG:root:tick = 0013 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf=False nf=False of=False | RAM addr:0x803 ||| related token index: 2
-DEBUG:root:tick = 0014 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 2
-DEBUG:root:tick = 0015 -> PC: 0x003 | SP: 0x000 | AC: +00101 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 2
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0017 -> PC: 0x004 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
-DEBUG:root:tick = 0018 -> PC: 0x004 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
-DEBUG:root:tick = 0019 -> PC: 0x004 | SP: 0x-01 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 3
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0021 -> PC: 0x005 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 4
-DEBUG:root:tick = 0022 -> PC: 0x005 | SP: 0x000 | AC: +00101 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 4
-DEBUG:root:tick = 0023 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 4
-DEBUG:root:tick = 0024 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 4
-DEBUG:root:tick = 0025 -> PC: 0x005 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 4
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0027 -> PC: 0x006 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
-DEBUG:root:tick = 0028 -> PC: 0x006 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
-DEBUG:root:tick = 0029 -> PC: 0x006 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 5
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0031 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 6
-DEBUG:root:tick = 0032 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 6
-DEBUG:root:tick = 0033 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 6
-DEBUG:root:tick = 0034 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 6
-DEBUG:root:tick = 0035 -> PC: 0x007 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 6
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0037 -> PC: 0x008 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
-DEBUG:root:tick = 0038 -> PC: 0x008 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
-DEBUG:root:tick = 0039 -> PC: 0x008 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 7
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0041 -> PC: 0x009 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 8
-DEBUG:root:tick = 0042 -> PC: 0x009 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x805 ||| related token index: 8
-DEBUG:root:tick = 0043 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x805 ||| related token index: 8
-DEBUG:root:tick = 0044 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 8
-DEBUG:root:tick = 0045 -> PC: 0x009 | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 8
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0047 -> PC: 0x00a | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
-DEBUG:root:tick = 0048 -> PC: 0x00a | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
-DEBUG:root:tick = 0049 -> PC: 0x00a | SP: 0x-01 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 9
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0051 -> PC: 0x00b | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 10
-DEBUG:root:tick = 0052 -> PC: 0x00b | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x806 ||| related token index: 10
-DEBUG:root:tick = 0053 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf=False nf=False of=False | RAM addr:0x806 ||| related token index: 10
-DEBUG:root:tick = 0054 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 10
-DEBUG:root:tick = 0055 -> PC: 0x00b | SP: 0x000 | AC: +00032 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 10
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0057 -> PC: 0x00c | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
-DEBUG:root:tick = 0058 -> PC: 0x00c | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
-DEBUG:root:tick = 0059 -> PC: 0x00c | SP: 0x-01 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 11
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0061 -> PC: 0x00d | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 12
-DEBUG:root:tick = 0062 -> PC: 0x00d | SP: 0x000 | AC: +00032 | ALU flags: zf= True nf=False of=False | RAM addr:0x807 ||| related token index: 12
-DEBUG:root:tick = 0063 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf=False nf=False of=False | RAM addr:0x807 ||| related token index: 12
-DEBUG:root:tick = 0064 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 12
-DEBUG:root:tick = 0065 -> PC: 0x00d | SP: 0x000 | AC: +00119 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 12
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0067 -> PC: 0x00e | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
-DEBUG:root:tick = 0068 -> PC: 0x00e | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
-DEBUG:root:tick = 0069 -> PC: 0x00e | SP: 0x-01 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 13
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0071 -> PC: 0x00f | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 14
-DEBUG:root:tick = 0072 -> PC: 0x00f | SP: 0x000 | AC: +00119 | ALU flags: zf= True nf=False of=False | RAM addr:0x805 ||| related token index: 14
-DEBUG:root:tick = 0073 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x805 ||| related token index: 14
-DEBUG:root:tick = 0074 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 14
-DEBUG:root:tick = 0075 -> PC: 0x00f | SP: 0x000 | AC: +00111 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 14
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0077 -> PC: 0x010 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
-DEBUG:root:tick = 0078 -> PC: 0x010 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
-DEBUG:root:tick = 0079 -> PC: 0x010 | SP: 0x-01 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 15
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0081 -> PC: 0x011 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 16
-DEBUG:root:tick = 0082 -> PC: 0x011 | SP: 0x000 | AC: +00111 | ALU flags: zf= True nf=False of=False | RAM addr:0x808 ||| related token index: 16
-DEBUG:root:tick = 0083 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf=False nf=False of=False | RAM addr:0x808 ||| related token index: 16
-DEBUG:root:tick = 0084 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 16
-DEBUG:root:tick = 0085 -> PC: 0x011 | SP: 0x000 | AC: +00114 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 16
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0087 -> PC: 0x012 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
-DEBUG:root:tick = 0088 -> PC: 0x012 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
-DEBUG:root:tick = 0089 -> PC: 0x012 | SP: 0x-01 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 17
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0091 -> PC: 0x013 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 18
-DEBUG:root:tick = 0092 -> PC: 0x013 | SP: 0x000 | AC: +00114 | ALU flags: zf= True nf=False of=False | RAM addr:0x804 ||| related token index: 18
-DEBUG:root:tick = 0093 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x804 ||| related token index: 18
-DEBUG:root:tick = 0094 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 18
-DEBUG:root:tick = 0095 -> PC: 0x013 | SP: 0x000 | AC: +00108 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 18
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0097 -> PC: 0x014 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
-DEBUG:root:tick = 0098 -> PC: 0x014 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
-DEBUG:root:tick = 0099 -> PC: 0x014 | SP: 0x-01 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 19
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0101 -> PC: 0x015 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 20
-DEBUG:root:tick = 0102 -> PC: 0x015 | SP: 0x000 | AC: +00108 | ALU flags: zf= True nf=False of=False | RAM addr:0x809 ||| related token index: 20
-DEBUG:root:tick = 0103 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf=False nf=False of=False | RAM addr:0x809 ||| related token index: 20
-DEBUG:root:tick = 0104 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 20
-DEBUG:root:tick = 0105 -> PC: 0x015 | SP: 0x000 | AC: +00100 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 20
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0107 -> PC: 0x016 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
-DEBUG:root:tick = 0108 -> PC: 0x016 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
-DEBUG:root:tick = 0109 -> PC: 0x016 | SP: 0x-01 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 21
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PUSH
-INFO:root:----- PUSH -----
-DEBUG:root:tick = 0111 -> PC: 0x017 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 22
-DEBUG:root:tick = 0112 -> PC: 0x017 | SP: 0x000 | AC: +00100 | ALU flags: zf= True nf=False of=False | RAM addr:0x80a ||| related token index: 22
-DEBUG:root:tick = 0113 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf=False nf=False of=False | RAM addr:0x80a ||| related token index: 22
-DEBUG:root:tick = 0114 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 22
-DEBUG:root:tick = 0115 -> PC: 0x017 | SP: 0x000 | AC: +00033 | ALU flags: zf=False nf=False of=False | RAM addr:0x000 ||| related token index: 22
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: PRINT
-DEBUG:root:----- PRINT -----
-DEBUG:root:tick = 0117 -> PC: 0x018 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
-DEBUG:root:tick = 0118 -> PC: 0x018 | SP: 0x000 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
-DEBUG:root:tick = 0119 -> PC: 0x018 | SP: 0x-01 | AC: +00033 | ALU flags: zf= True nf=False of=False | RAM addr:0x000 ||| related token index: 23
-INFO:root:=====   instruction fetch   =====
-DEBUG:root:decoded instruction opcode: HLT
-DEBUG:root:----- HLT -----
-INFO:root:HLT INTERRUPTION
-INFO:root:INSTRUCTION COUNTER: 24
-
-> cat out.txt
+> cat output.txt
 Hello world!
 ```
 
-| ФИО                     | алг.  | LoC       | code байт | code инстр. | инстр. | такт. | вариант |
-|-------------------------|-------|-----------|-----------|-------------|--------|-------|---------|
-| Андросов Иван Сергеевич | hello | 1         | -         | 25          | 24     | 119   | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
-| Андросов Иван Сергеевич | cat   | 1         | -         | 65          | 846    | 3975  | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
-| Андросов Иван Сергеевич | prob1 | 34        | -         | 145         | 52480  | 245784 | forth | stack | harv | hw | tick | struct | stream | port | prob1     |
+| ФИО                     | алг.            | LoC | code байт | code инстр. | инстр. | такт.   | вариант |
+|-------------------------|-----------------|-----|-----------|-------------|--------|---------|---------|
+| Андросов Иван Сергеевич | cat             | 6   | -         | 10          | 25     | 249     |         |
+| Андросов Иван Сергеевич | hello_world     | 29  | -         | 67          | 287    | 5481    |         |
+| Андросов Иван Сергеевич | hello_user_name | 37  | -         | 97          | 305    | 13246   |         |
+| Андросов Иван Сергеевич | prob1           | 72  | -         | 140         | 2010   | 1518359 |         |
