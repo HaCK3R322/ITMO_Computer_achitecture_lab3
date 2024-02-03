@@ -813,7 +813,7 @@ def main(program_filepath, input_filepath, output_file_path, logging_level=None,
             except Exception as e:
                 logger.log(logging.INFO, e)
                 logger.log(logging.INFO,
-                            f"=== Simulation end. Ticks: {simulation.cu.ticks}. Time elapsed: {time.time() - start_time:.6f}s ===")
+                            f"=== Simulation end. Ticks: {simulation.cu.ticks}. ===")
 
                 logger.log(logging.INFO, "\nStack printed:")
                 simulation.cu.stack.print_stack()
